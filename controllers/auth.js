@@ -172,6 +172,56 @@ exports.getMe = asyncHandler(async (req, res, next) => {
 
 
 
+// Controller for user onboarding
+exports.onBoarding = asyncHandler(async (req, res) => {
+  const {
+    address,
+    country,
+    state,
+    city,
+    postalcode,
+    description,
+    hobbies,
+    favoritePlants,
+  } = req.body
+
+  // Find the logged-in user based on the token's user ID
+  const user = await User.findById(req.user.id)
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' })
+  }
+
+  // Update the user's profile with the provided fields
+  user.address = address || user.address
+  user.country = country || user.country
+  user.state = state || user.state
+  user.city = city || user.city
+  user.postalcode = postalcode || user.postalcode
+  user.description = description || user.description
+  user.hobbies = hobbies || user.hobbies // Expecting an array for hobbies
+  user.favoritePlants = favoritePlants || user.favoritePlants // Expecting an array
+
+  // Save the updated user data
+  const updatedUser = await user.save()
+
+  return res.status(200).json({
+    message: 'Onboarding completed successfully',
+    user: {
+      _id: updatedUser._id,
+      address: updatedUser.address,
+      country: updatedUser.country,
+      state: updatedUser.state,
+      city: updatedUser.city,
+      postalcode: updatedUser.postalcode,
+      description: updatedUser.description,
+      hobbies: updatedUser.hobbies,
+      favoritePlants: updatedUser.favoritePlants,
+    },
+  })
+})
+
+
 // @desc      Update password
 // @route     PUT /api/v1/auth/updatepassword
 // @access    Private
@@ -195,43 +245,55 @@ exports.updatePassword = asyncHandler(async (req, res, next) => {
 // @route     POST /api/v1/auth/forgotpassword
 // @access    Public
 exports.forgotPassword = asyncHandler(async (req, res, next) => {
+  // Find the user by email
   const user = await User.findOne({ email: req.body.email })
 
   if (!user) {
     return next(new ErrorResponse('There is no user with that email', 404))
   }
 
-  // Get reset token
+  // Generate reset token
   const resetToken = user.getResetPasswordToken()
 
+  // Save the user document without triggering validation
   await user.save({ validateBeforeSave: false })
 
-  // Create reset URL
+  // Construct the password reset URL
   const resetUrl = `${process.env.CLIENT_URL}/reset-password-account/${resetToken}`
 
-  const message = `Hello,\n\n
-We received a request to reset the password for your OOOWAP account. If you requested this password reset, please click on the link below or copy and paste it into your browser to proceed:
-  \n
+  // Email content
+  const message = `
+Hello ${user.firstName || 'User'},
+
+We received a request to reset the password for your Garden account. If you requested this password reset, please click on the link below or copy and paste it into your browser to proceed:
+
 Reset Password: ${resetUrl}
-  \n
-If you did not request this password reset, please ignore this email or contact us immediately at hey@OOOWAP.com if you suspect any suspicious activity. Your security is our top priority. We recommend creating a strong, unique password that includes a combination of letters, numbers, and special characters.
-  \n
-Thank you for using OOOWAP.
-  \n
-Best Regards,
-OOOWAP`
+
+If you did not request this password reset, please ignore this email or contact us immediately at hey@Garden.com if you suspect any suspicious activity. Your security is our top priority. We recommend creating a strong, unique password that includes a combination of letters, numbers, and special characters.
+
+Thank you for using Garden.
+
+Best Regards,  
+Garden Support Team
+  `
 
   try {
-    // Call your custom sendEmail function
+    // Send the email using the custom sendEmail function
     await sendEmail({
       email: user.email,
-      subject: 'Password Reset Request for Your OOOWAP Account',
+      subject: 'Password Reset Request for Your Garden Account',
       message,
     })
 
-    res.status(200).json({ success: true, data: 'Email sent' })
+    // Respond with success
+    res.status(200).json({
+      success: true,
+      data: 'Password reset email sent',
+    })
   } catch (err) {
     console.error(err)
+
+    // Clear the reset token and expiration in case of email failure
     user.resetPasswordToken = undefined
     user.resetPasswordExpire = undefined
 
@@ -239,12 +301,8 @@ OOOWAP`
 
     return next(new ErrorResponse('Email could not be sent', 500))
   }
-
-  res.status(200).json({
-    success: true,
-    data: user,
-  })
 })
+
 
 // @desc      Reset password
 // @route     PUT /api/v1/auth/resetpassword/:resettoken
@@ -447,6 +505,29 @@ exports.allusers = asyncHandler(async (req, res, next) => {
   })
 })
 
+
+exports.getUserById = asyncHandler(async (req, res, next) => {
+  const { id } = req.params
+
+  // Find the user by ID
+  const user = await User.findById(id)
+
+  // If user is not found, return an error
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'User not found',
+    })
+  }
+
+  // If user is found, return the user data
+  return res.status(200).json({
+    success: true,
+    data: user,
+  })
+})
+
+
 exports.deleteuser = asyncHandler(async (req, res, next) => {
   console.log('User id', req.params.id)
   const user = await User.findByIdAndDelete(req.params.id)
@@ -462,36 +543,71 @@ exports.deleteuser = asyncHandler(async (req, res, next) => {
 })
 
 exports.updateuser = asyncHandler(async (req, res, next) => {
-  console.log('User id', req.params.id)
+  console.log('User ID:', req.params.id)
+
+  // Find user by ID
   const user = await User.findById(req.params.id)
-  console.log(req.body)
-  if (user) {
-    console.log('user found')
-    user.firstName = req.body.firstName || user.firstName
-    user.lastName = req.body.lastName || user.lastName
-    user.email = req.body.email || user.email
-    user.role = req.body.role || user.role
-    user.phoneNumber = req.body.phoneNumber || user.phoneNumber
 
-    if (req.body.password != '') {
-      user.password = req.body.password || user.password
-    }
-
-    const updatedUser = await user.save()
-
-    return res.json({
-      _id: updatedUser._id,
-      displayName: updatedUser.displayName,
-      email: updatedUser.email,
-      role: updatedUser.role,
-     
-    })
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' })
   }
 
-  return res.status(500).json({
-    message: 'User not found',
+  console.log('User found:', user)
+  console.log('Request body:', req.body)
+
+  // Update user fields if provided in the request
+  user.firstName = req.body.firstName ?? user.firstName
+  user.lastName = req.body.lastName ?? user.lastName
+  user.email = req.body.email ?? user.email
+  user.role = req.body.role ?? user.role
+  user.phoneNumber = req.body.phoneNumber ?? user.phoneNumber
+  user.address = req.body.address ?? user.address
+  user.country = req.body.country ?? user.country
+  user.state = req.body.state ?? user.state
+  user.city = req.body.city ?? user.city
+  user.postalcode = req.body.postalCode ?? user.postalCode
+  user.description = req.body.description ?? user.description
+
+  // Update hobbies if provided
+  if (req.body.hobbies && Array.isArray(req.body.hobbies)) {
+    user.hobbies = req.body.hobbies
+  }
+
+  // Update favorite plants if provided
+  if (req.body.favoritePlants && Array.isArray(req.body.favoritePlants)) {
+    user.favoritePlants = req.body.favoritePlants
+  }
+
+  // Update password only if provided and not empty
+  if (req.body.password && req.body.password.trim() !== '') {
+    user.password = req.body.password
+  }
+
+  // Save the updated user data
+  const updatedUser = await user.save()
+
+  // Return the updated user details
+  return res.status(200).json({
+    success: true,
+    data: {
+      _id: updatedUser._id,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      phoneNumber: updatedUser.phoneNumber,
+      address: updatedUser.address,
+      country: updatedUser.country,
+      state: updatedUser.state,
+      city: updatedUser.city,
+      postalcode: updatedUser.postalcode,
+      description: updatedUser.description,
+      hobbies: updatedUser.hobbies,
+      favoritePlants: updatedUser.favoritePlants,
+    },
   })
 })
+
 
 
 
@@ -519,6 +635,19 @@ exports.updateUserProfile = asyncHandler(async (req, res, next) => {
   user.postalcode = req.body.postalcode || user.postalcode
   user.description = req.body.description || user.description
 
+  // Update favorite plants if provided
+  if (req.body.favoritePlants && Array.isArray(req.body.favoritePlants)) {
+    user.favoritePlants = req.body.favoritePlants
+  }
+
+  if (req.body.hobbies && Array.isArray(req.body.hobbies)) {
+    user.hobbies = req.body.hobbies
+  }
+
+  // Update password only if provided and not empty
+  if (req.body.password && req.body.password.trim() !== '') {
+    user.password = req.body.password
+  }
   let imageUrl
   if (req.file) {
     imageUrl = req.file.path // This is the URL returned by Cloudinary
@@ -558,9 +687,11 @@ exports.updateUserProfile = asyncHandler(async (req, res, next) => {
     country: updatedUser.country,
     state: updatedUser.state,
     city: updatedUser.city,
-    postalCode: updatedUser.postalcode,
+    postalcode: updatedUser.postalcode,
     description: updatedUser.description,
     image: updatedUser.photoURL,
+    hobbies: updatedUser.hobbies,
+    favoritePlants: updatedUser.favoritePlants,
   })
 })
 
@@ -585,14 +716,17 @@ exports.getUserProfile = asyncHandler(async (req, res, next) => {
       city: user.city,
       postalcode: user.postalcode,
       description: user.description,
+      hobbies: user.hobbies,
+      gardens: user.gardens,
+      favoritePlants: user.favoritePlants,
       image: user.photoURL,
-      balance: user.balance
     })
   }
 
   // Return error if the user is not found
   return res.status(404).json({ message: 'User not found' })
 })
+
 
 
 

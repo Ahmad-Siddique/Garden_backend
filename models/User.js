@@ -76,12 +76,23 @@ const UserSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    default:''
+    default: '',
   },
-  balance: {
-    type: Number,
-    default: 0, // Initial balance
+  hobbies: {
+    type:Array
   },
+  gardens: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Garden',
+    },
+  ],
+  favoritePlants: [
+    {
+      type: String,
+      trim: true,
+    },
+  ],
 
   // Token for resetting the user's password
   resetPasswordToken: String,
@@ -104,11 +115,19 @@ const UserSchema = new mongoose.Schema({
 // Encrypt password using bcrypt before saving to the database
 UserSchema.pre('save', async function (next) {
   if (!this.isModified('password')) {
-    next()
+    console.log('Password not modified:', this.password)
+    return next()
   }
 
-  const salt = await bcrypt.genSalt(10)
-  this.password = await bcrypt.hash(this.password, salt)
+  console.log('Hashing password:', this.password)
+  try {
+    const salt = await bcrypt.genSalt(10)
+    this.password = await bcrypt.hash(this.password, salt)
+    console.log('Hashed password:', this.password)
+    next()
+  } catch (error) {
+    next(error)
+  }
 })
 
 // Generate a signed JWT token for the user
@@ -120,6 +139,8 @@ UserSchema.methods.getSignedJwtToken = function () {
 
 // Match user entered password to hashed password in the database
 UserSchema.methods.matchPassword = async function (enteredPassword) {
+  console.log("Entered password", enteredPassword, this.password)
+  console.log(await bcrypt.compare(enteredPassword, this.password))
   return await bcrypt.compare(enteredPassword, this.password)
 }
 

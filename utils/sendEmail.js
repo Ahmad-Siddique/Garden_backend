@@ -17,7 +17,7 @@ const sendEmail = async (options) => {
   })
 
   const message = {
-    from: `OOOWAP <lw@uniquewebdesigner.com>`,
+    from: `Garden <lw@uniquewebdesigner.com>`,
     to: options.email,
     subject: options.subject,
     text: options.message,

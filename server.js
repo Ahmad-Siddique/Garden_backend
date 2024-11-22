@@ -75,6 +75,7 @@ connectDB()
 
 
 app.use('/api/v1/auth', require('./routes/auth'))
+app.use('/api/v1/plantinfo', require('./routes/plantinfo'))
 
 
 

@@ -7,6 +7,7 @@ const {
   register,
   login,
   getMe,
+  onBoarding,
   updatePassword,
   forgotPassword,
   resetPassword,
@@ -19,6 +20,8 @@ const {
   verifyEmailSend,
   updateUserProfile,
   getUserProfile,
+  getUserById,
+
   // getUserMetrics,
   // getUserMetrics2,
 } = require('../controllers/auth')
@@ -42,6 +45,7 @@ router.post('/login', login)
 
 // Route to get user details (requires authentication)
 router.get('/getMe', protect, getMe)
+router.get('/onboarding', protect, onBoarding)
 // router.get('/getusermetrics', protect, getUserMetrics)
 // router.get('/getusermetrics2', protect, getUserMetrics2)
 router.post('/forgotPassword', forgotPassword)
@@ -64,6 +68,7 @@ router.get('/getuserprofile', protect, getUserProfile)
 router.get('/allusers', protect, authorize('admin'), allusers)
 router.delete('/deleteuser/:id', protect, authorize('admin'), deleteuser)
 router.put('/updateuser/:id', protect, authorize('admin'), updateuser)
+router.get('/getuser/:id', protect, authorize('admin'), getUserById)
 router.get('/countuser', countuser)
 
 // Export the router for use in other parts of the application
