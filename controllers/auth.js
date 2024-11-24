@@ -192,6 +192,13 @@ exports.onBoarding = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: 'User not found' })
   }
 
+  // Handle the uploaded image
+  let imageUrl = user.image // Retain the current image URL if no new image is uploaded
+  if (req.file) {
+    // Assuming the file is uploaded successfully and the storage middleware sets `req.file.path`
+    imageUrl = req.file.path // Adjust based on your storage setup (e.g., S3, local, etc.)
+  }
+
   // Update the user's profile with the provided fields
   user.address = address || user.address
   user.country = country || user.country
@@ -201,6 +208,7 @@ exports.onBoarding = asyncHandler(async (req, res) => {
   user.description = description || user.description
   user.hobbies = hobbies || user.hobbies // Expecting an array for hobbies
   user.favoritePlants = favoritePlants || user.favoritePlants // Expecting an array
+  user.photoURL = imageUrl // Save the image URL
   user.isOnboarded = true
 
   // Save the updated user data
@@ -218,10 +226,12 @@ exports.onBoarding = asyncHandler(async (req, res) => {
       description: updatedUser.description,
       hobbies: updatedUser.hobbies,
       favoritePlants: updatedUser.favoritePlants,
+      photoURL: updatedUser.photoURL, // Include the image field in the response
       isOnboarded: updatedUser.isOnboarded,
     },
   })
 })
+
 
 
 // @desc      Update password

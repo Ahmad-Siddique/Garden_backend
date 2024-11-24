@@ -45,7 +45,7 @@ router.post('/login', login)
 
 // Route to get user details (requires authentication)
 router.get('/getMe', protect, getMe)
-router.get('/onboarding', protect, onBoarding)
+router.post('/onboarding', upload.single('image'),protect, onBoarding)
 // router.get('/getusermetrics', protect, getUserMetrics)
 // router.get('/getusermetrics2', protect, getUserMetrics2)
 router.post('/forgotPassword', forgotPassword)
