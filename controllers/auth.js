@@ -320,12 +320,7 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
   })
 
   if (!user) {
-    return next(
-      new ErrorResponse(
-        'The provided token is invalid or has expired. Please request a new one.',
-        400,
-      ),
-    )
+    return next(new ErrorResponse('Link is not valid, please try again!', 400))
   }
 
   // Set new password
