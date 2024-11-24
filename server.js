@@ -51,7 +51,8 @@ const allowedOrigins = [
   'https://ooowap-frontend.vercel.app',
   'ooowap-fronend.vercel.app',
   'www.ooowap-frontend.vercel.app',
-  'https://ooowap-backend.onrender.com',
+  'https://garden-planter.vercel.app',
+  'www.garden-planter.vercel.app',
 ]
 
 const corsOptions = {
