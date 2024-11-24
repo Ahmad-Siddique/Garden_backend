@@ -201,6 +201,7 @@ exports.onBoarding = asyncHandler(async (req, res) => {
   user.description = description || user.description
   user.hobbies = hobbies || user.hobbies // Expecting an array for hobbies
   user.favoritePlants = favoritePlants || user.favoritePlants // Expecting an array
+  user.isOnboarded = true
 
   // Save the updated user data
   const updatedUser = await user.save()
@@ -217,6 +218,7 @@ exports.onBoarding = asyncHandler(async (req, res) => {
       description: updatedUser.description,
       hobbies: updatedUser.hobbies,
       favoritePlants: updatedUser.favoritePlants,
+      isOnboarded: updatedUser.isOnboarded,
     },
   })
 })
@@ -474,7 +476,7 @@ const sendTokenResponse = (user, statusCode, res) => {
         email: user.email,
         role: user.role,
         image: user.photoURL,
-        balance:user.balance
+        isOnboarded:user.isOnboarded
        
       },
     })

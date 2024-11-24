@@ -94,6 +94,11 @@ const UserSchema = new mongoose.Schema({
     },
   ],
 
+  isOnboarded: {
+    type: Boolean,
+    default: false
+  },
+
   // Token for resetting the user's password
   resetPasswordToken: String,
   // Expiry date for the reset password token
