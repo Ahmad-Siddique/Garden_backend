@@ -503,14 +503,42 @@ function splitDisplayName(displayName) {
   return { firstName, lastName }
 }
 
-exports.allusers = asyncHandler(async (req, res, next) => {
-  const users = await User.find({})
+exports.allusers = async (req, res) => {
+  const { search, page = 1, limit = 10 } = req.query // Extract search, page, and limit from query params
+  console.log('SEARCH:', req.query)
 
-  return res.status(200).json({
-    success: true,
-    data: users,
-  })
-})
+  try {
+    // Build the search query
+    const searchQuery = search
+      ? {
+          $or: [
+            { firstName: { $regex: search, $options: 'i' } }, // Case insensitive search by first name
+            { email: { $regex: search, $options: 'i' } }, // Case insensitive search by email
+          ],
+        }
+      : {} // No search criteria if no search query is provided
+
+    // Pagination logic
+    const skip = (page - 1) * limit // Calculate how many records to skip
+
+    // Fetch users based on search criteria and apply pagination
+    const users = await User.find(searchQuery).skip(skip).limit(parseInt(limit))
+
+    // Get the total number of users that match the search query
+    const totalUsers = await User.countDocuments(searchQuery)
+
+    // Return the users along with the pagination data
+    return res.status(200).json({
+      users,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalUsers / limit),
+      totalUsers,
+    })
+  } catch (error) {
+    console.error('Error fetching users:', error)
+    return res.status(500).json({ message: 'Server error' })
+  }
+}
 
 
 exports.getUserById = asyncHandler(async (req, res, next) => {
