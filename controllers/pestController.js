@@ -5,6 +5,7 @@ const createPest = async (req, res) => {
   try {
     const {
       image,
+      name,
       affectedPlants,
       identification,
       damage,
@@ -15,6 +16,7 @@ const createPest = async (req, res) => {
 
     const pest = new Pests({
       image,
+      name,
       affectedPlants,
       identification,
       damage,
@@ -63,6 +65,7 @@ const updatePest = async (req, res) => {
     const { id } = req.params
     const {
       image,
+      name,
       affectedPlants,
       identification,
       damage,
@@ -75,6 +78,7 @@ const updatePest = async (req, res) => {
       id,
       {
         image,
+        name,
         affectedPlants,
         identification,
         damage,

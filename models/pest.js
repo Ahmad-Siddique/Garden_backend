@@ -6,6 +6,11 @@ const pestsSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  name: {
+    type: String,
+    required: true,
+    unique:true,
+  },
   affectedPlants: [
     {
       type: mongoose.Schema.Types.ObjectId,

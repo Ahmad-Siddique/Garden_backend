@@ -600,23 +600,23 @@ exports.updateuser = asyncHandler(async (req, res, next) => {
   user.country = req.body.country ?? user.country
   user.state = req.body.state ?? user.state
   user.city = req.body.city ?? user.city
-  user.postalcode = req.body.postalCode ?? user.postalCode
+  user.postalcode = req.body.postalcode ?? user.postalcode
   user.description = req.body.description ?? user.description
 
   // Update hobbies if provided
-  if (req.body.hobbies && Array.isArray(req.body.hobbies)) {
-    user.hobbies = req.body.hobbies
-  }
+  // if (req.body.hobbies && Array.isArray(req.body.hobbies)) {
+  //   user.hobbies = req.body.hobbies
+  // }
 
-  // Update favorite plants if provided
-  if (req.body.favoritePlants && Array.isArray(req.body.favoritePlants)) {
-    user.favoritePlants = req.body.favoritePlants
-  }
+  // // Update favorite plants if provided
+  // if (req.body.favoritePlants && Array.isArray(req.body.favoritePlants)) {
+  //   user.favoritePlants = req.body.favoritePlants
+  // }
 
-  // Update password only if provided and not empty
-  if (req.body.password && req.body.password.trim() !== '') {
-    user.password = req.body.password
-  }
+  // // Update password only if provided and not empty
+  // if (req.body.password && req.body.password.trim() !== '') {
+  //   user.password = req.body.password
+  // }
 
   // Save the updated user data
   const updatedUser = await user.save()
