@@ -9,7 +9,13 @@ const pestsSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    unique:true,
+    unique: true,
+  },
+  slug: {
+    type: String,
+    // required: true,
+    unique: true,
+    trim: true,
   },
   affectedPlants: [
     {
@@ -43,7 +49,14 @@ const pestsSchema = new mongoose.Schema({
     trim: true,
   },
 })
-
+pestsSchema.pre('save', function (next) {
+  this.name = this.name.toLowerCase() // Normalize to lowercase
+  next()
+})
+pestsSchema.pre('save', function (next) {
+  this.slug = this.name.toLowerCase().replace(/ /g, '-')
+  next()
+})
 const Pests = mongoose.model('Pests', pestsSchema)
 
 module.exports = Pests

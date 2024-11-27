@@ -7,6 +7,12 @@ const plantSchema = new mongoose.Schema({
     trim: true,
     unique: true,
   },
+  slug: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+  },
   scientificName: {
     type: String,
     trim: true,
@@ -114,7 +120,10 @@ plantSchema.pre('save', function (next) {
   this.name = this.name.toLowerCase() // Normalize to lowercase
   next()
 })
-
+plantSchema.pre('save', function (next) {
+  this.slug = this.name.toLowerCase().replace(/ /g, '-')
+  next()
+})
 
 module.exports = mongoose.model('Plant', plantSchema)
 

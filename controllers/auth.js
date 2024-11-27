@@ -670,12 +670,15 @@ exports.updateUserProfile = asyncHandler(async (req, res, next) => {
   user.postalcode = req.body.postalcode || user.postalcode
   user.description = req.body.description || user.description
 
+  console.log(req.body.favoritePlants)
+  console.log(Array.isArray(req.body.favoritePlants))
   // Update favorite plants if provided
-  if (req.body.favoritePlants && Array.isArray(req.body.favoritePlants)) {
+  if (req.body.favoritePlants ) {
+    console.log("Turu")
     user.favoritePlants = req.body.favoritePlants
   }
 
-  if (req.body.hobbies && Array.isArray(req.body.hobbies)) {
+  if (req.body.hobbies ) {
     user.hobbies = req.body.hobbies
   }
 
