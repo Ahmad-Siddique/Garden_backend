@@ -1,6 +1,5 @@
 const Plant = require('../models/Plant')
 
-// Create Plant
 exports.createPlant = async (req, res) => {
   try {
     const {
@@ -14,6 +13,7 @@ exports.createPlant = async (req, res) => {
       feeding,
       harvest,
       storage,
+      quickInfo, // Receive quickInfo as an array
     } = req.body
 
     const images = req.files
@@ -26,6 +26,11 @@ exports.createPlant = async (req, res) => {
         .json({ error: 'A plant with this name already exists.' })
     }
 
+    // Ensure quickInfo is an array, even if it's sent as a string
+    const parsedQuickInfo = Array.isArray(quickInfo)
+      ? quickInfo
+      : JSON.parse(quickInfo) // Parse if it's a string
+
     const plant = new Plant({
       name,
       scientificName,
@@ -37,6 +42,7 @@ exports.createPlant = async (req, res) => {
       feeding,
       harvest,
       storage,
+      quickInfo: parsedQuickInfo, // Use the parsed array here
       image1: images?.image1 ? images.image1[0].path : null,
       image2: images?.image2 ? images.image2[0].path : null,
       image3: images?.image3 ? images.image3[0].path : null,
@@ -53,6 +59,7 @@ exports.createPlant = async (req, res) => {
   }
 }
 
+
 // Get All Plants
 exports.getPlants = async (req, res) => {
   try {
@@ -67,7 +74,7 @@ exports.getPlants = async (req, res) => {
 exports.getPlantById = async (req, res) => {
   try {
     const plant = await Plant.findById(req.params.id).populate(
-      'category quickInfo.infoId',
+      'quickInfo.infoId',
     )
     if (!plant) return res.status(404).json({ message: 'Plant not found' })
     res.status(200).json(plant)
@@ -79,7 +86,7 @@ exports.getPlantById = async (req, res) => {
 // Update Plant
 exports.updatePlant = async (req, res) => {
   try {
-    const { name, ...updates } = req.body
+    const { name, quickInfo, ...updates } = req.body // Destructure quickInfo
     const images = req.files
 
     // Check if name is being updated
@@ -95,6 +102,13 @@ exports.updatePlant = async (req, res) => {
           .json({ error: 'A plant with this name already exists.' })
       }
       updates.name = name.toLowerCase() // Normalize name to lowercase
+    }
+
+    // Ensure quickInfo is handled as an array (like in createPlant)
+    if (quickInfo) {
+      updates.quickInfo = Array.isArray(quickInfo)
+        ? quickInfo
+        : JSON.parse(quickInfo) // Parse if it's a string
     }
 
     // Handle image updates
@@ -121,6 +135,7 @@ exports.updatePlant = async (req, res) => {
   }
 }
 
+
 // Delete Plant
 exports.deletePlant = async (req, res) => {
   try {
@@ -129,5 +144,35 @@ exports.deletePlant = async (req, res) => {
     res.status(200).json({ message: 'Plant deleted successfully' })
   } catch (error) {
     res.status(500).json({ error: error.message })
+  }
+}
+
+
+
+exports.getPlantsGroupedByCategory = async (req, res) => {
+  try {
+    const plants = await Plant.find().populate('category', 'name') // Populate category field to get category name
+
+    // Group plants by category
+    const groupedPlants = plants.reduce((acc, plant) => {
+      const category = plant.category ? plant.category : 'Uncategorized'
+      if (!acc[category]) {
+        acc[category] = []
+      }
+      acc[category].push(plant)
+      return acc
+    }, {})
+
+    res.status(200).json({
+      success: true,
+      groupedPlants,
+    })
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({
+      success: false,
+      message: 'Server Error',
+      error: error.message,
+    })
   }
 }

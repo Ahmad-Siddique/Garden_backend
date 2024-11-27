@@ -9,7 +9,7 @@ const plantSchema = new mongoose.Schema({
   },
   slug: {
     type: String,
-    required: true,
+    // required: true,
     unique: true,
     trim: true,
   },
@@ -18,8 +18,8 @@ const plantSchema = new mongoose.Schema({
     trim: true,
   },
   category: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'PlantCategories',
+    type: String,
+  
   },
   family: {
     type: String,
