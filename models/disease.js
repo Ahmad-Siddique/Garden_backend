@@ -6,6 +6,17 @@ const diseaseSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  name: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  slug: {
+    type: String,
+    // required: true,
+    unique: true,
+    trim: true,
+  },
   affectedPlants: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -19,7 +30,7 @@ const diseaseSchema = new mongoose.Schema({
   },
   damage: {
     type: String, // Information on the damage caused by the disease
-    required: true,
+    // required: true,
     trim: true,
   },
   damagePrevention: {
@@ -39,6 +50,15 @@ const diseaseSchema = new mongoose.Schema({
   },
 })
 
+
+diseaseSchema.pre('save', function (next) {
+  this.name = this.name.toLowerCase() // Normalize to lowercase
+  next()
+})
+diseaseSchema.pre('save', function (next) {
+  this.slug = this.name.toLowerCase().replace(/ /g, '-')
+  next()
+})
 const Disease = mongoose.model('Disease', diseaseSchema)
 
 module.exports = Disease

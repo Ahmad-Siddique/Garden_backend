@@ -18,6 +18,6 @@ router.get('/', protect, getAllPests)
 router.get('/:id', protect, getPestById)
 router.put('/:id', upload.single('image'), protect, updatePest)
 router.delete('/:id', protect, deletePest)
-router.get('/:name', protect, getPestsByPlantSlug)
+router.get('/name/:name', protect, getPestsByPlantSlug)
 
 module.exports = router
