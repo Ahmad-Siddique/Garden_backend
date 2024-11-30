@@ -82,6 +82,7 @@ app.use('/api/v1/plants', require('./routes/plant'))
 app.use('/api/v1/plantinfo', require('./routes/plantinfo'))
 app.use('/api/v1/pests', require('./routes/pest'))
 app.use('/api/v1/disease', require('./routes/disease'))
+app.use('/api/v1/critters', require('./routes/beneficialCritters'))
 
 
 

@@ -17,12 +17,22 @@ const createDisease = async (req, res) => {
      let imageUrl = ''
      if (req.file) {
        imageUrl = req.file.path // Cloudinary URL
-     }
+    }
+    
+    const parsedAffectedPlants = Array.isArray(affectedPlants)
+      ? affectedPlants // Already an array
+      : JSON.parse(affectedPlants || '[]') // Parse if stringified
+
+    // Convert to ObjectId if necessary
+
+    const convertedAffectedPlants = parsedAffectedPlants.map(
+      (plantId) => new mongoose.Types.ObjectId(plantId),
+    )
 
     const disease = new Disease({
       image: imageUrl,
       name,
-      affectedPlants,
+      affectedPlants: convertedAffectedPlants,
       identification,
       damage,
       damagePrevention,
@@ -40,13 +50,45 @@ const createDisease = async (req, res) => {
 
 // Get all diseases
 const getAllDiseases = async (req, res) => {
+  const { search, page = 1, limit = 10 } = req.query // Extract search, page, and limit from query params
+
   try {
-    const diseases = await Disease.find().populate('affectedPlants')
-    res.status(200).json({ success: true, data: diseases })
+    // Build the search query
+    const searchQuery = search
+      ? {
+          $or: [
+            { name: { $regex: search, $options: 'i' } }, // Case insensitive search by disease name
+            { description: { $regex: search, $options: 'i' } }, // Case insensitive search by description
+          ],
+        }
+      : {} // No search criteria if no search query is provided
+
+    // Pagination logic
+    const skip = (page - 1) * limit // Calculate how many records to skip
+
+    // Fetch diseases based on search criteria and apply pagination
+    const diseases = await Disease.find(searchQuery)
+      .populate('affectedPlants') // Populate the affectedPlants field
+      .skip(skip)
+      .limit(parseInt(limit))
+
+    // Get the total number of diseases that match the search query
+    const totalDiseases = await Disease.countDocuments(searchQuery)
+
+    // Return the diseases along with the pagination data
+    res.status(200).json({
+      success: true,
+      diseases,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalDiseases / limit),
+      totalDiseases,
+    })
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message })
+    console.error('Error fetching diseases:', error)
+    res.status(500).json({ success: false, message: 'Server error' })
   }
 }
+
 
 // Get disease by ID
 const getDiseaseById = async (req, res) => {
@@ -84,11 +126,21 @@ const updateDisease = async (req, res) => {
      let imageUrl = null
      if (req.file) {
        imageUrl = req.file.path // New Cloudinary URL
-     }
+    }
+    
+     const parsedAffectedPlants = Array.isArray(affectedPlants)
+       ? affectedPlants // Already an array
+       : JSON.parse(affectedPlants || '[]') // Parse if stringified
+
+     // Convert to ObjectId if necessary
+
+     const convertedAffectedPlants = parsedAffectedPlants.map(
+       (plantId) => new mongoose.Types.ObjectId(plantId),
+     )
 
        const updatedData = {
          name,
-         affectedPlants,
+         affectedPlants: convertedAffectedPlants,
          identification,
          damage,
          damagePrevention,

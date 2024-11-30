@@ -6,6 +6,11 @@ const beneficialCritterSchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  name: {
+    type: String,
+    required:true
+  }
+  ,
   affectedPlants: [
     {
       type: mongoose.Schema.Types.ObjectId,

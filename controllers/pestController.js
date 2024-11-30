@@ -1,5 +1,6 @@
 const Pests = require('../models/pest')
 const Plant = require('../models/Plant')
+ const mongoose = require('mongoose')
 // Create new pest
 const createPest = async (req, res) => {
   try {
@@ -13,6 +14,15 @@ const createPest = async (req, res) => {
       chemicalControl,
     } = req.body
 
+    const parsedAffectedPlants = Array.isArray(affectedPlants)
+      ? affectedPlants // Already an array
+      : JSON.parse(affectedPlants || '[]') // Parse if stringified
+
+    // Convert to ObjectId if necessary
+
+    const convertedAffectedPlants = parsedAffectedPlants.map(
+      (plantId) => new mongoose.Types.ObjectId(plantId),
+    )
     // Check if file exists
     let imageUrl = ''
     if (req.file) {
@@ -22,7 +32,7 @@ const createPest = async (req, res) => {
     const pest = new Pests({
       image: imageUrl,
       name,
-      affectedPlants,
+      affectedPlants: convertedAffectedPlants,
       identification,
       damage,
       prevention,
@@ -68,7 +78,7 @@ const getAllPests = async (req, res) => {
     // Return the pests along with the pagination data
     res.status(200).json({
       success: true,
-      data: pests,
+      pests: pests,
       currentPage: parseInt(page),
       totalPages: Math.ceil(totalPests / limit),
       totalPests,
@@ -96,6 +106,24 @@ const getPestById = async (req, res) => {
   }
 }
 
+
+
+const getPestByIdAdmin = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const pest = await Pests.findById(id)
+    if (!pest) {
+      return res.status(404).json({ success: false, message: 'Pest not found' })
+    }
+
+    res.status(200).json({ success: true, data: pest })
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message })
+  }
+}
+
+
 // Update pest by ID
 const updatePest = async (req, res) => {
   try {
@@ -110,15 +138,28 @@ const updatePest = async (req, res) => {
       chemicalControl,
     } = req.body
 
+    // Parse affectedPlants to ensure it's an array
+    const parsedAffectedPlants = Array.isArray(affectedPlants)
+      ? affectedPlants // Already an array
+      : JSON.parse(affectedPlants || '[]') // Parse if stringified
+
+    // Convert to ObjectId if necessary
+   
+    const convertedAffectedPlants = parsedAffectedPlants.map(
+      (plantId) => new mongoose.Types.ObjectId(plantId),
+    )
+
     // Handle image update
     let imageUrl = null
     if (req.file) {
       imageUrl = req.file.path // New Cloudinary URL
     }
 
+    console.log('PARSED AFFECTED PLANTS:', convertedAffectedPlants)
+
     const updatedData = {
       name,
-      affectedPlants,
+      affectedPlants: convertedAffectedPlants,
       identification,
       damage,
       prevention,
@@ -141,9 +182,11 @@ const updatePest = async (req, res) => {
 
     res.status(200).json({ success: true, data: pest })
   } catch (error) {
+    console.log(error)
     res.status(500).json({ success: false, message: error.message })
   }
 }
+
 
 
 // Delete pest by ID
@@ -203,6 +246,7 @@ module.exports = {
   createPest,
   getAllPests,
   getPestById,
+  getPestByIdAdmin,
   updatePest,
   deletePest,
   getPestsByPlantSlug,

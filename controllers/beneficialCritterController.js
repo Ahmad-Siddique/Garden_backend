@@ -1,10 +1,11 @@
-const BeneficialCritter = require('../models/beneficialCritterModel')
+const BeneficialCritter = require('../models/beneficialCritters')
+const Plant = require('../models/Plant')
 
 // Create new beneficial critter
 const createBeneficialCritter = async (req, res) => {
   try {
     const {
-      imageUrl,
+     name,
       affectedPlants,
       speciesCommonName,
       roleInGarden,
@@ -12,7 +13,12 @@ const createBeneficialCritter = async (req, res) => {
       attractionMethods,
     } = req.body
 
+     let imageUrl = ''
+     if (req.file) {
+       imageUrl = req.file.path // Cloudinary URL
+     }
     const beneficialCritter = new BeneficialCritter({
+      name,
       imageUrl,
       affectedPlants,
       speciesCommonName,
@@ -31,14 +37,45 @@ const createBeneficialCritter = async (req, res) => {
 
 // Get all beneficial critters
 const getAllBeneficialCritters = async (req, res) => {
+  const { search, page = 1, limit = 10 } = req.query // Extract search, page, and limit from query params
+
   try {
-    const beneficialCritters =
-      await BeneficialCritter.find().populate('affectedPlants')
-    res.status(200).json({ success: true, data: beneficialCritters })
+    // Build the search query
+    const searchQuery = search
+      ? {
+          $or: [
+            { name: { $regex: search, $options: 'i' } }, // Case insensitive search by name
+            { description: { $regex: search, $options: 'i' } }, // Case insensitive search by description
+          ],
+        }
+      : {} // No search criteria if no search query is provided
+
+    // Pagination logic
+    const skip = (page - 1) * limit // Calculate how many records to skip
+
+    // Fetch beneficial critters based on search criteria and apply pagination
+    const beneficialCritters = await BeneficialCritter.find(searchQuery)
+      .populate('affectedPlants') // Populate the affectedPlants field
+      .skip(skip)
+      .limit(parseInt(limit))
+
+    // Get the total number of beneficial critters that match the search query
+    const totalCritters = await BeneficialCritter.countDocuments(searchQuery)
+
+    // Return the beneficial critters along with the pagination data
+    res.status(200).json({
+      success: true,
+      beneficialCritters,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalCritters / limit),
+      totalCritters,
+    })
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message })
+    console.error('Error fetching beneficial critters:', error)
+    res.status(500).json({ success: false, message: 'Server error' })
   }
 }
+
 
 // Get beneficial critter by ID
 const getBeneficialCritterById = async (req, res) => {
@@ -64,7 +101,7 @@ const updateBeneficialCritter = async (req, res) => {
   try {
     const { id } = req.params
     const {
-      imageUrl,
+      name,
       affectedPlants,
       speciesCommonName,
       roleInGarden,
@@ -72,9 +109,14 @@ const updateBeneficialCritter = async (req, res) => {
       attractionMethods,
     } = req.body
 
+     let imageUrl = ''
+     if (req.file) {
+       imageUrl = req.file.path // Cloudinary URL
+     }
     const beneficialCritter = await BeneficialCritter.findByIdAndUpdate(
       id,
       {
+        name,
         imageUrl,
         affectedPlants,
         speciesCommonName,
@@ -120,10 +162,47 @@ const deleteBeneficialCritter = async (req, res) => {
   }
 }
 
+
+const getCritterByPlantSlug = async (req, res) => {
+  try {
+    const { name } = req.params
+
+    // Convert the slug back to the proper plant name
+    const plantName = name.replace(/-/g, ' ') // Replace hyphens with spaces
+
+    // Find the plant by its name
+    const plant = await Plant.findOne({
+      name: new RegExp(`^${plantName}$`, 'i'),
+    }).exec()
+    if (!plant) {
+      return res.status(404).json({ message: 'Plant not found.' })
+    }
+
+    // Use the plant's _id to find pests
+    const pests = await BeneficialCritter.find({ affectedPlants: plant._id })
+      .populate('affectedPlants', 'name') // Optionally populate the plant name
+      .exec()
+
+    if (!pests || pests.length === 0) {
+      return res
+        .status(404)
+        .json({ message: 'No pests found for the specified plant.' })
+    }
+
+    res.status(200).json(pests)
+  } catch (error) {
+    console.error('Error fetching pests:', error)
+    res
+      .status(500)
+      .json({ message: 'Internal server error', error: error.message })
+  }
+}
+
 module.exports = {
   createBeneficialCritter,
   getAllBeneficialCritters,
   getBeneficialCritterById,
   updateBeneficialCritter,
   deleteBeneficialCritter,
+  getCritterByPlantSlug,
 }

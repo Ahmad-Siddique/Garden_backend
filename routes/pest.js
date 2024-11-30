@@ -4,6 +4,7 @@ const {
   createPest,
   getAllPests,
   getPestById,
+  getPestByIdAdmin,
   updatePest,
   deletePest,
   getPestsByPlantSlug
@@ -16,6 +17,7 @@ const { protect, authorize } = require('../middleware/auth')
 router.post('/',upload.single('image'),protect, createPest)
 router.get('/', protect, getAllPests)
 router.get('/:id', protect, getPestById)
+router.get('/admin/:id', protect, getPestByIdAdmin)
 router.put('/:id', upload.single('image'), protect, updatePest)
 router.delete('/:id', protect, deletePest)
 router.get('/name/:name', protect, getPestsByPlantSlug)
