@@ -1,3 +1,4 @@
+const { default: mongoose } = require('mongoose')
 const BeneficialCritter = require('../models/beneficialCritters')
 const Plant = require('../models/Plant')
 
@@ -16,11 +17,21 @@ const createBeneficialCritter = async (req, res) => {
      let imageUrl = ''
      if (req.file) {
        imageUrl = req.file.path // Cloudinary URL
-     }
+    }
+    
+     const parsedAffectedPlants = Array.isArray(affectedPlants)
+       ? affectedPlants // Already an array
+       : JSON.parse(affectedPlants || '[]') // Parse if stringified
+
+     // Convert to ObjectId if necessary
+
+     const convertedAffectedPlants = parsedAffectedPlants.map(
+       (plantId) => new mongoose.Types.ObjectId(plantId),
+     )
     const beneficialCritter = new BeneficialCritter({
       name,
       imageUrl,
-      affectedPlants,
+      affectedPlants: convertedAffectedPlants,
       speciesCommonName,
       roleInGarden,
       identificationTips,
@@ -96,6 +107,24 @@ const getBeneficialCritterById = async (req, res) => {
   }
 }
 
+const getBeneficialCritterByIdAdmin = async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const critter = await BeneficialCritter.findById(id)
+    if (!critter) {
+      return res
+        .status(404)
+        .json({ success: false, message: 'Critter not found' })
+    }
+
+    res.status(200).json({ success: true, data: critter })
+  } catch (error) {
+    console.log(error)
+    res.status(500).json({ success: false, message: error.message })
+  }
+}
+
 // Update beneficial critter by ID
 const updateBeneficialCritter = async (req, res) => {
   try {
@@ -109,21 +138,42 @@ const updateBeneficialCritter = async (req, res) => {
       attractionMethods,
     } = req.body
 
+    // console.log(
+    //   "GETTING DATA", req.file.path
+    // )
+
      let imageUrl = ''
      if (req.file) {
        imageUrl = req.file.path // Cloudinary URL
+    }
+    
+     const parsedAffectedPlants = Array.isArray(affectedPlants)
+       ? affectedPlants // Already an array
+       : JSON.parse(affectedPlants || '[]') // Parse if stringified
+
+     // Convert to ObjectId if necessary
+
+     const convertedAffectedPlants = parsedAffectedPlants.map(
+       (plantId) => new mongoose.Types.ObjectId(plantId),
+    )
+    
+     const updatedData = {
+       name,
+
+       affectedPlants: convertedAffectedPlants,
+       speciesCommonName,
+       roleInGarden,
+       identificationTips,
+       attractionMethods,
      }
+
+     if (imageUrl) {
+       updatedData.imageUrl = imageUrl // Only add image if updated
+     }
+
     const beneficialCritter = await BeneficialCritter.findByIdAndUpdate(
       id,
-      {
-        name,
-        imageUrl,
-        affectedPlants,
-        speciesCommonName,
-        roleInGarden,
-        identificationTips,
-        attractionMethods,
-      },
+      updatedData,
       { new: true, runValidators: true },
     )
 
@@ -205,4 +255,5 @@ module.exports = {
   updateBeneficialCritter,
   deleteBeneficialCritter,
   getCritterByPlantSlug,
+  getBeneficialCritterByIdAdmin,
 }
