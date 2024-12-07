@@ -16,6 +16,8 @@ router.post(
 )
 router.get('/grouped-by-category', plantController.getPlantsGroupedByCategory)
 router.get('/', plantController.getPlants)
+router.get('/all', plantController.getAllPlants)
+router.get('/category/:category', plantController.getPlantsByCategoryName)
 router.get('/:id', plantController.getPlantById)
 router.put(
   '/:id',

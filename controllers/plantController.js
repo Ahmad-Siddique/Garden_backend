@@ -103,6 +103,67 @@ exports.getPlants = async (req, res) => {
   }
 };
 
+exports.getAllPlants = async (req, res) => {
+  try {
+    const plants = await Plant.find().populate('category quickInfo.infoId')
+    res.status(200).json(plants)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+
+// Get plants by category with pagination and search
+exports.getPlantsByCategoryName = async (req, res) => {
+  const { category } = req.params; // Extract category from route parameters
+  const { search, page = 1, limit = 10 } = req.query; // Extract query parameters
+
+  try {
+    // Build the search query
+    const searchQuery = {
+      category: category, // Filter by category
+      ...(search && {
+        $or: [
+          { name: { $regex: search, $options: 'i' } }, // Search by plant name
+          { scientificName: { $regex: search, $options: 'i' } }, // Search by scientific name
+          { description: { $regex: search, $options: 'i' } }, // Search by description
+        ],
+      }),
+    };
+
+    // Pagination logic
+    const skip = (page - 1) * limit; // Calculate number of records to skip
+
+    // Fetch plants and apply pagination
+    const plants = await Plant.find(searchQuery)
+      .populate('quickInfo.infoId') // Populate related fields
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Count total plants matching the search query
+    const totalPlants = await Plant.countDocuments(searchQuery);
+
+    if (plants.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `No plants found for category: ${category}`,
+      });
+    }
+
+    // Respond with plants and pagination data
+    res.status(200).json({
+      success: true,
+      plants,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalPlants / limit),
+      totalPlants,
+    });
+  } catch (error) {
+    console.error('Error fetching plants by category:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 
 // Get Plant By ID
 exports.getPlantById = async (req, res) => {
