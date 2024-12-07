@@ -62,14 +62,47 @@ exports.createPlant = async (req, res) => {
 
 
 // Get All Plants
+// Get all plants
 exports.getPlants = async (req, res) => {
+  const { search, page = 1, limit = 10 } = req.query; // Extract search, page, and limit from query params
+
   try {
-    const plants = await Plant.find().populate('category quickInfo.infoId')
-    res.status(200).json(plants)
+    // Build the search query
+    const searchQuery = search
+      ? {
+          $or: [
+            { name: { $regex: search, $options: 'i' } }, // Case insensitive search by plant name
+            { description: { $regex: search, $options: 'i' } }, // Case insensitive search by description
+          ],
+        }
+      : {}; // No search criteria if no search query is provided
+
+    // Pagination logic
+    const skip = (page - 1) * limit; // Calculate how many records to skip
+
+    // Fetch plants based on search criteria and apply pagination
+    const plants = await Plant.find(searchQuery)
+      .populate('category quickInfo.infoId') // Populate related fields
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Get the total number of plants that match the search query
+    const totalPlants = await Plant.countDocuments(searchQuery);
+
+    // Return the plants along with the pagination data
+    res.status(200).json({
+      success: true,
+      plants,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalPlants / limit),
+      totalPlants,
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    console.error('Error fetching plants:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
   }
-}
+};
+
 
 // Get Plant By ID
 exports.getPlantById = async (req, res) => {
