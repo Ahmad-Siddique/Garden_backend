@@ -1,32 +1,27 @@
 const mongoose = require('mongoose')
 
+const dateValidator = {
+  validator: function (value) {
+    return (
+      (this.startDate === 'N/A' && this.endDate === 'N/A') ||
+      (this.startDate && this.endDate)
+    )
+  },
+  message: 'Both startDate and endDate should be provided or set to "N/A".',
+}
+
+const subSchema = {
+  startDate: { type: String, default: 'N/A' },
+  endDate: { type: String, default: 'N/A', validate: dateValidator },
+  description: { type: String },
+}
+
 const calendarSchema = new mongoose.Schema({
-  startInside: {
-    startDate: { type: String, default: 'N/A' },
-    endDate: { type: String, default: 'N/A' },
-    description: {
-      type: String,
-    },
-  },
-  transplant: {
-    startDate: { type: String, default: 'N/A' },
-    endDate: { type: String, default: 'N/A' },
-    description: {
-      type: String,
-    },
-  },
-  sowOutside: {
-    startDate: { type: String, default: 'N/A' },
-    endDate: { type: String, default: 'N/A' },
-    description: {
-      type: String,
-    },
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    default: null,
-  },
+  startInside: subSchema,
+  transplant: subSchema,
+  sowOutside: subSchema,
+  harvest: subSchema,
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   plantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'PlantInfo',

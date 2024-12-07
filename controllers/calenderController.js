@@ -3,12 +3,36 @@ const Calendar = require('../models/calendarModel')
 // Create new calendar
 const createCalendar = async (req, res) => {
   try {
-    const { startInside, transplant, sowOutside, userId, plantId } = req.body
+    const { startInside, transplant, sowOutside, harvest, userId, plantId } =
+      req.body
 
+    // Helper function to validate date fields
+    const validateDates = (section) => {
+      return (
+        !section ||
+        (section.startDate && section.endDate) ||
+        (!section.startDate && !section.endDate)
+      )
+    }
+
+    // Prepare valid sections
+    const validSections = {}
+    if (startInside && validateDates(startInside)) {
+      validSections.startInside = startInside
+    }
+    if (transplant && validateDates(transplant)) {
+      validSections.transplant = transplant
+    }
+    if (sowOutside && validateDates(sowOutside)) {
+      validSections.sowOutside = sowOutside
+    }
+    if (harvest && validateDates(harvest)) {
+      validSections.harvest = harvest
+    }
+
+    // Create calendar entry
     const calendar = new Calendar({
-      startInside,
-      transplant,
-      sowOutside,
+      ...validSections,
       userId,
       plantId,
     })
@@ -16,9 +40,14 @@ const createCalendar = async (req, res) => {
     await calendar.save()
     res.status(201).json({ success: true, data: calendar })
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message })
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    })
   }
 }
+
+
 
 // Get all calendars
 const getAllCalendars = async (req, res) => {
@@ -64,25 +93,62 @@ const getCalendarById = async (req, res) => {
 const updateCalendar = async (req, res) => {
   try {
     const { id } = req.params
-    const { startInside, transplant, sowOutside, userId, plantId } = req.body
+    const { startInside, transplant, sowOutside, harvest, userId, plantId } =
+      req.body
 
-    const calendar = await Calendar.findByIdAndUpdate(
-      id,
-      { startInside, transplant, sowOutside, userId, plantId },
-      { new: true, runValidators: true },
-    )
+    // Helper function to validate date fields
+    const validateDates = (section) => {
+      return (
+        !section ||
+        (section.startDate && section.endDate) ||
+        (!section.startDate && !section.endDate)
+      )
+    }
+
+    // Prepare the updated fields
+    const updatedFields = {}
+
+    if (startInside && validateDates(startInside)) {
+      updatedFields.startInside = startInside
+    }
+    if (transplant && validateDates(transplant)) {
+      updatedFields.transplant = transplant
+    }
+    if (sowOutside && validateDates(sowOutside)) {
+      updatedFields.sowOutside = sowOutside
+    }
+    if (harvest && validateDates(harvest)) {
+      updatedFields.harvest = harvest
+    }
+    if (userId) {
+      updatedFields.userId = userId
+    }
+    if (plantId) {
+      updatedFields.plantId = plantId
+    }
+
+    // Update the calendar
+    const calendar = await Calendar.findByIdAndUpdate(id, updatedFields, {
+      new: true,
+      runValidators: true,
+    })
 
     if (!calendar) {
-      return res
-        .status(404)
-        .json({ success: false, message: 'Calendar not found' })
+      return res.status(404).json({
+        success: false,
+        message: 'Calendar not found',
+      })
     }
 
     res.status(200).json({ success: true, data: calendar })
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message })
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    })
   }
 }
+
 
 // Delete calendar by ID
 const deleteCalendar = async (req, res) => {

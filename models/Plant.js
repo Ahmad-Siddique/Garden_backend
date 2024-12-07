@@ -69,29 +69,7 @@ const plantSchema = new mongoose.Schema({
     },
   ], // Array of associated Info with additional details
 
-  // calendar: {
-  //   startInside: {
-  //     type: {
-  //       startDate: { type: Date },
-  //       endDate: { type: Date },
-  //     },
-  //     default: 'N/A', // Indicates not applicable if no dates provided
-  //   },
-  //   transplant: {
-  //     type: {
-  //       startDate: { type: Date },
-  //       endDate: { type: Date },
-  //     },
-  //     default: 'N/A',
-  //   },
-  //   sowOutside: {
-  //     type: {
-  //       startDate: { type: Date },
-  //       endDate: { type: Date },
-  //     },
-  //     default: 'N/A',
-  //   },
-  // },
+  
 
   // New fields with longer string capacity
   growingFromSeed: {

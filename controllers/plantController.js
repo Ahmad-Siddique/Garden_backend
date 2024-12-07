@@ -27,10 +27,10 @@ exports.createPlant = async (req, res) => {
     }
 
     // Ensure quickInfo is an array, even if it's sent as a string
-    const parsedQuickInfo = Array.isArray(quickInfo)
+    const parsedQuickInfo = quickInfo ? Array.isArray(quickInfo)
       ? quickInfo
-      : JSON.parse(quickInfo) // Parse if it's a string
-
+      : JSON.parse(quickInfo)  // Parse if it's a string
+      : [];
     const plant = new Plant({
       name,
       scientificName,
@@ -55,6 +55,7 @@ exports.createPlant = async (req, res) => {
       .status(201)
       .json({ message: 'Plant created successfully', data: savedPlant })
   } catch (error) {
+    console.log(error)
     res.status(400).json({ error: error.message })
   }
 }

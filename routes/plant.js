@@ -14,7 +14,7 @@ router.post(
   ]),
   plantController.createPlant,
 )
-
+router.get('/grouped-by-category', plantController.getPlantsGroupedByCategory)
 router.get('/', plantController.getPlants)
 router.get('/:id', plantController.getPlantById)
 router.put(
@@ -29,8 +29,5 @@ router.put(
   plantController.updatePlant,
 )
 router.delete('/:id', plantController.deletePlant)
-router.get(
-  '/grouped-by-category',
-  plantController.getPlantsGroupedByCategory,
-)
+
 module.exports = router
