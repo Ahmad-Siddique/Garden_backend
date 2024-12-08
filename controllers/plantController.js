@@ -31,6 +31,10 @@ exports.createPlant = async (req, res) => {
       ? quickInfo
       : JSON.parse(quickInfo)  // Parse if it's a string
       : [];
+    
+    console.log("REQ HEADERS", req.headers)
+    console.log('REQ USER', req.user)
+    console.log('REQ', req)
     const plant = new Plant({
       name,
       scientificName,
@@ -48,6 +52,7 @@ exports.createPlant = async (req, res) => {
       image3: images?.image3 ? images.image3[0].path : null,
       image4: images?.image4 ? images.image4[0].path : null,
       gardenImage: images?.gardenImage ? images.gardenImage[0].path : null,
+      createdBy: req.user.id,
     })
 
     const savedPlant = await plant.save()
@@ -82,7 +87,7 @@ exports.getPlants = async (req, res) => {
 
     // Fetch plants based on search criteria and apply pagination
     const plants = await Plant.find(searchQuery)
-      .populate('category quickInfo.infoId') // Populate related fields
+      .populate('quickInfo.infoId') // Populate related fields
       .skip(skip)
       .limit(parseInt(limit));
 

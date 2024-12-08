@@ -19,7 +19,6 @@ const plantSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-  
   },
   family: {
     type: String,
@@ -69,8 +68,6 @@ const plantSchema = new mongoose.Schema({
     },
   ], // Array of associated Info with additional details
 
-  
-
   // New fields with longer string capacity
   growingFromSeed: {
     type: String,
@@ -91,6 +88,11 @@ const plantSchema = new mongoose.Schema({
   storage: {
     type: String,
     maxlength: 5000,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    // required: true,
   },
 })
 
