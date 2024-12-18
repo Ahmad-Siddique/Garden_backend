@@ -1,4 +1,4 @@
-const Calendar = require('../models/calender')
+const Calendar = require('../models/Calender')
 const Plant = require('../models/Plant')
 
 // Create new calendar
