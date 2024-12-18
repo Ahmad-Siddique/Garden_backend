@@ -53,7 +53,7 @@ const plantSchema = new mongoose.Schema({
     {
       infoId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'plantinfo',
+        ref: 'PlantInfo',
         required: true,
       },
       title: {

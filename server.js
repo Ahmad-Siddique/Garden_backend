@@ -86,6 +86,8 @@ app.use('/api/v1/plantinfo', require('./routes/plantinfo'))
 app.use('/api/v1/pests', require('./routes/pest'))
 app.use('/api/v1/disease', require('./routes/disease'))
 app.use('/api/v1/critters', require('./routes/beneficialCritters'))
+app.use('/api/v1/vitamins', require('./routes/vitamin'))
+app.use('/api/v1/calenders', require('./routes/calender'))
 
 
 

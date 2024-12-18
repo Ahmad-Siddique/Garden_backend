@@ -17,7 +17,7 @@ const plantInfoSchema = new mongoose.Schema({
   
 })
 
-const User = mongoose.model('plantinfo', plantInfoSchema)
+const User = mongoose.model('PlantInfo', plantInfoSchema)
 
 // Export the 'User' model for use in other parts of the application
 module.exports = User

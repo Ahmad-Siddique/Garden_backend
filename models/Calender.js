@@ -24,7 +24,7 @@ const calendarSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
   plantId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'PlantInfo',
+    ref: 'Plant',
     required: true,
   },
 })
