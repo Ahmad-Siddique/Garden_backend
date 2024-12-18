@@ -22,6 +22,22 @@ const calendarSchema = new mongoose.Schema({
   sowOutside: subSchema,
   harvest: subSchema,
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  country:{
+    type:String,
+    default:null
+  },
+  state:{
+    type:String,
+    default:null
+  },
+  city:{
+    type:String,
+    default:null
+  },
+  place:{
+    type:String,
+    default:null
+  },
   plantId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Plant',

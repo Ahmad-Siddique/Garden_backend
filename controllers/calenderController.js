@@ -4,7 +4,7 @@ const Plant = require('../models/Plant')
 // Create new calendar
 const createCalendar = async (req, res) => {
   try {
-    const { startInside, transplant, sowOutside, harvest, userId, plantId } =
+    const { startInside, transplant, sowOutside, harvest, userId, plantId, country, state, city, place } =
       req.body
 
     // Helper function to validate date fields
@@ -30,6 +30,16 @@ const createCalendar = async (req, res) => {
     if (harvest && validateDates(harvest)) {
       validSections.harvest = harvest
     }
+    if (country) {
+      validSections.country = country
+    }
+    if (state) {
+      validSections.state = state
+    } if (city) {
+      validSections.city = city
+    } if (place) {
+      validSections.place = place
+    } 
 
     // Create calendar entry
     const calendar = new Calendar({
@@ -120,7 +130,7 @@ const getCalendarById = async (req, res) => {
 const updateCalendar = async (req, res) => {
   try {
     const { id } = req.params
-    const { startInside, transplant, sowOutside, harvest, plantId } =
+    const { startInside, transplant, sowOutside, harvest, plantId, country, state, city, place } =
       req.body
 
     // Helper function to validate date fields
@@ -147,6 +157,16 @@ const updateCalendar = async (req, res) => {
     if (harvest && validateDates(harvest)) {
       updatedFields.harvest = harvest
     }
+    if (country) {
+      updatedFields.country = country
+    }
+    if (state) {
+      updatedFields.state= state
+    } if (city) {
+      updatedFields.city = city
+    } if (place) {
+      updatedFields.place = place
+    } 
    
     if (plantId) {
       updatedFields.plantId = plantId
@@ -173,6 +193,67 @@ const updateCalendar = async (req, res) => {
     })
   }
 }
+
+
+const getCalendarsByCategoryName = async (req, res) => {
+  const { category } = req.params; // Extract category from route parameters
+  const { search, page = 1, limit = 10 } = req.query; // Extract query parameters
+
+  try {
+    // Pagination logic
+    const skip = (page - 1) * limit; // Calculate number of records to skip
+
+    // Build the search query
+    const searchQuery = {
+      ...(search && {
+        $or: [
+          { 'plantId.name': { $regex: search, $options: 'i' } }, // Search by plant name
+          { 'plantId.scientificName': { $regex: search, $options: 'i' } }, // Search by scientific name
+          { 'plantId.description': { $regex: search, $options: 'i' } }, // Search by plant description
+        ],
+      }),
+    };
+
+    // Fetch calendars with associated plant data
+    const calendars = await Calendar.find()
+      .populate({
+        path: 'plantId',
+        match: { category }, // Filter by category
+        select: 'name scientificName description category', // Select relevant plant fields
+      })
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    // Filter out calendars where the plant doesn't match the category
+    const filteredCalendars = calendars.filter((calendar) => calendar.plantId);
+
+    // Count total matching calendars (before pagination)
+    const totalCalendars = await Calendar.countDocuments({
+      ...searchQuery,
+      plantId: { $ne: null }, // Ensure the plant exists and matches the category
+    });
+
+    if (filteredCalendars.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `No calendars found for category: ${category}`,
+      });
+    }
+
+    // Respond with calendars and pagination data
+    res.status(200).json({
+      success: true,
+      calendars: filteredCalendars,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalCalendars / limit),
+      totalCalendars,
+    });
+  } catch (error) {
+    console.error('Error fetching calendars by category:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 
 
 // Delete calendar by ID
@@ -233,11 +314,61 @@ const getCalenderByPlantSlug = async (req, res) => {
   }
 }
 
+
+const getCalendarsGroupedByCategory = async (req, res) => {
+  const { page = 1, limit = 10 } = req.query; // Extract pagination parameters with defaults
+  const skip = (page - 1) * limit;
+
+  try {
+    // Fetch calendars with their associated plants
+    const calendars = await Calendar.find()
+      .populate({
+        path: 'plantId',
+        select: 'name category', // Only fetch necessary fields from Plant
+      });
+
+    // Group calendars by plant category
+    const groupedCalendars = calendars.reduce((acc, calendar) => {
+      const category = calendar.plantId?.category || 'Uncategorized';
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push(calendar);
+      return acc;
+    }, {});
+
+    // Paginate each category
+    const paginatedCategories = {};
+    for (const [category, categoryCalendars] of Object.entries(groupedCalendars)) {
+      paginatedCategories[category] = {
+        totalCalendars: categoryCalendars.length,
+        totalPages: Math.ceil(categoryCalendars.length / limit),
+        currentPage: parseInt(page),
+        calendars: categoryCalendars.slice(skip, skip + limit), // Apply pagination
+      };
+    }
+
+    res.status(200).json({
+      success: true,
+      groupedCalendars: paginatedCategories,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error',
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   createCalendar,
   getAllCalendars,
   getCalendarById,
   updateCalendar,
   deleteCalendar,
-  getCalenderByPlantSlug
+  getCalenderByPlantSlug,
+  getCalendarsGroupedByCategory,
+  getCalendarsByCategoryName
 }
