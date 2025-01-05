@@ -58,6 +58,8 @@ const allowedOrigins = [
   'https://garden-planter3.vercel.app',
   'garden-planter3.vercel.app',
   'www.garden-planter3.vercel.app',
+  'https://mygardenplanter.vercel.app',
+  'www.mygardenplanter.vercel.app/'
 ]
 
 const corsOptions = {
@@ -87,7 +89,12 @@ app.use('/api/v1/pests', require('./routes/pest'))
 app.use('/api/v1/disease', require('./routes/disease'))
 app.use('/api/v1/critters', require('./routes/beneficialCritters'))
 app.use('/api/v1/vitamins', require('./routes/vitamin'))
+app.use('/api/v1/nutrients', require('./routes/nutrient'))
+app.use('/api/v1/effects', require('./routes/effect'))
 app.use('/api/v1/calenders', require('./routes/calender'))
+app.use('/api/v1/featurerequest', require('./routes/featurerequest'))
+app.use('/api/v1/featurerequestcomment', require('./routes/featurerequestcomment'))
+app.use('/api/v1/bugreport', require('./routes/bugreport'))
 
 
 

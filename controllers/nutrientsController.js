@@ -1,4 +1,4 @@
-const Nutrition = require('../models/vitamin')
+const Nutrition = require('../models/nutrient')
 
 // Create new nutrition
 const createNutrition = async (req, res) => {
@@ -60,21 +60,21 @@ const getAllNutritions = async (req, res) => {
       : {}
 
     // Fetch pests with search and pagination logic
-    const vitamins = await Nutrition.find(searchQuery)
+    const nutrients = await Nutrition.find(searchQuery)
       .skip((page - 1) * limit)
       .limit(parseInt(limit))
 
     // Get total pests count matching the search query
-    const totalVitamins = await Nutrition.countDocuments(searchQuery)
+    const totalNutrients = await Nutrition.countDocuments(searchQuery)
 
     // Respond with pests and pagination details
     res.status(200).json({
       success: true,
-      vitamins: vitamins,
+      nutrients: nutrients,
      
         currentPage: parseInt(page),
-        totalPages: Math.ceil(totalVitamins / limit),
-        totalVitamins,
+        totalPages: Math.ceil(totalNutrients / limit),
+        totalNutrients,
       
     })
   } catch (error) {
@@ -92,7 +92,7 @@ const getNutritionById = async (req, res) => {
     if (!nutrition) {
       return res
         .status(404)
-        .json({ success: false, message: 'Vitamin not found' })
+        .json({ success: false, message: 'Nutrient not found' })
     }
 
     res.status(200).json({ success: true, data: nutrition })
@@ -145,7 +145,7 @@ const updateNutrition = async (req, res) => {
     if (!nutrition) {
       return res
         .status(404)
-        .json({ success: false, message: 'Vitamin not found' });
+        .json({ success: false, message: 'Nutrient not found' });
     }
 
     // Send the successful response
@@ -163,7 +163,7 @@ const getNutritionByIdAdmin = async (req, res) => {
 
     const pest = await Nutrition.findById(id)
     if (!pest) {
-      return res.status(404).json({ success: false, message: 'Vitamin not found' })
+      return res.status(404).json({ success: false, message: 'Nutrient not found' })
     }
 
     res.status(200).json({ success: true, data: pest })
@@ -181,12 +181,12 @@ const deleteNutrition = async (req, res) => {
     if (!nutrition) {
       return res
         .status(404)
-        .json({ success: false, message: 'Vitamin not found' })
+        .json({ success: false, message: 'Nutrient not found' })
     }
 
     res
       .status(200)
-      .json({ success: true, message: 'Vitamin deleted successfully' })
+      .json({ success: true, message: 'Nutrient deleted successfully' })
   } catch (error) {
     res.status(500).json({ success: false, message: error.message })
   }

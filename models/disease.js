@@ -59,6 +59,16 @@ diseaseSchema.pre('save', function (next) {
   this.slug = this.name.toLowerCase().replace(/ /g, '-')
   next()
 })
+
+diseaseSchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate();
+  if (update.name) {
+    // Normalize name and generate slug if name is being updated
+    update.name = update.name.toLowerCase();
+    update.slug = update.name.replace(/ /g, '-');
+  }
+  next();
+});
 const Disease = mongoose.model('Disease', diseaseSchema)
 
 module.exports = Disease

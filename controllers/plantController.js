@@ -13,28 +13,29 @@ exports.createPlant = async (req, res) => {
       feeding,
       harvest,
       storage,
-      quickInfo, // Receive quickInfo as an array
-    } = req.body
+      quickInfo,
+      pests,
+      diseases,
+      beneficialCritters,
+      nutrients,
+      vitamins,
+      combativeRelationships,
+      companionRelationships,
+    } = req.body;
 
-    const images = req.files
+    const images = req.files;
 
-    // Check for case-insensitive duplicate name
-    const existingPlant = await Plant.findOne({ name: name.toLowerCase() })
+    const existingPlant = await Plant.findOne({ name: name.toLowerCase() });
     if (existingPlant) {
-      return res
-        .status(400)
-        .json({ error: 'A plant with this name already exists.' })
+      return res.status(400).json({ error: 'A plant with this name already exists.' });
     }
 
-    // Ensure quickInfo is an array, even if it's sent as a string
-    const parsedQuickInfo = quickInfo ? Array.isArray(quickInfo)
-      ? quickInfo
-      : JSON.parse(quickInfo)  // Parse if it's a string
+    const parsedQuickInfo = quickInfo
+      ? Array.isArray(quickInfo)
+        ? quickInfo
+        : JSON.parse(quickInfo)
       : [];
-    
-    console.log("REQ HEADERS", req.headers)
-    console.log('REQ USER', req.user)
-    console.log('REQ', req)
+
     const plant = new Plant({
       name,
       scientificName,
@@ -46,55 +47,91 @@ exports.createPlant = async (req, res) => {
       feeding,
       harvest,
       storage,
-      quickInfo: parsedQuickInfo, // Use the parsed array here
+      quickInfo: parsedQuickInfo,
       image1: images?.image1 ? images.image1[0].path : null,
       image2: images?.image2 ? images.image2[0].path : null,
       image3: images?.image3 ? images.image3[0].path : null,
       image4: images?.image4 ? images.image4[0].path : null,
       gardenImage: images?.gardenImage ? images.gardenImage[0].path : null,
+      pests,
+      diseases,
+      beneficialCritters,
+      nutrients,
+      vitamins,
+      combativeRelationships,
+      companionRelationships,
       createdBy: req.user.id,
-    })
+    });
 
-    const savedPlant = await plant.save()
-    res
-      .status(201)
-      .json({ message: 'Plant created successfully', data: savedPlant })
+    const savedPlant = await plant.save();
+    res.status(201).json({ message: 'Plant created successfully', data: savedPlant });
   } catch (error) {
-    console.log(error)
-    res.status(400).json({ error: error.message })
+    console.error(error);
+    res.status(400).json({ error: error.message });
   }
-}
+};
+
 
 
 // Get All Plants
 // Get all plants
 exports.getPlants = async (req, res) => {
-  const { search, page = 1, limit = 10 } = req.query; // Extract search, page, and limit from query params
+  const { search, page = 1, limit = 10, sun, frost, season, sort } = req.query;
 
   try {
-    // Build the search query
+    // Build the search query for name and description
     const searchQuery = search
       ? {
           $or: [
-            { name: { $regex: search, $options: 'i' } }, // Case insensitive search by plant name
-            { description: { $regex: search, $options: 'i' } }, // Case insensitive search by description
+            { name: { $regex: search, $options: 'i' } }, // Case insensitive search for name
+            { description: { $regex: search, $options: 'i' } }, // Case insensitive search for description
           ],
         }
-      : {}; // No search criteria if no search query is provided
+      : {};
+
+    // Build the filter query for quickInfo.title
+    const filterConditions = [];
+    if (sun) {
+      filterConditions.push({ title: { $in: sun.split(',') } });
+    }
+    if (frost) {
+      filterConditions.push({ title: { $in: frost.split(',') } });
+    }
+    if (season) {
+      filterConditions.push({ title: { $in: season.split(',') } });
+    }
+
+    // Add quickInfo filter if any condition is provided
+    if (filterConditions.length > 0) {
+      searchQuery.quickInfo = {
+        $elemMatch: {
+          $or: filterConditions,
+        },
+      };
+    }
 
     // Pagination logic
-    const skip = (page - 1) * limit; // Calculate how many records to skip
+    const skip = (page - 1) * limit;
 
-    // Fetch plants based on search criteria and apply pagination
+    // Sorting logic
+    const sortOptions = {};
+    if (sort === 'name') {
+      sortOptions.name = 1; // Sort by name in ascending order
+    } else if (sort === 'category') {
+      sortOptions.category = 1; // Sort by category in ascending order
+    }
+
+    // Fetch plants with the built query, apply sorting and pagination
     const plants = await Plant.find(searchQuery)
       .populate('quickInfo.infoId') // Populate related fields
+      .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
 
-    // Get the total number of plants that match the search query
+    // Count total plants matching the search and filters
     const totalPlants = await Plant.countDocuments(searchQuery);
 
-    // Return the plants along with the pagination data
+    // Return response
     res.status(200).json({
       success: true,
       plants,
@@ -107,6 +144,7 @@ exports.getPlants = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 };
+
 
 exports.getAllPlants = async (req, res) => {
   try {
@@ -183,57 +221,82 @@ exports.getPlantById = async (req, res) => {
   }
 }
 
-// Update Plant
 exports.updatePlant = async (req, res) => {
   try {
-    const { name, quickInfo, ...updates } = req.body // Destructure quickInfo
-    const images = req.files
+    const { name, quickInfo, pests, diseases, beneficialCritters, nutrients, vitamins, combativeRelationships, companionRelationships, ...updates } = req.body;
 
-    // Check if name is being updated
+    // Ensure 'name' is not duplicated
     if (name) {
-      // Find a plant with the same name (case-insensitive) that is not the current plant
       const existingPlant = await Plant.findOne({
         name: name.toLowerCase(),
-        _id: { $ne: req.params.id }, // Exclude the current plant
-      })
+        _id: { $ne: req.params.id },
+      });
       if (existingPlant) {
-        return res
-          .status(400)
-          .json({ error: 'A plant with this name already exists.' })
+        return res.status(400).json({ error: 'A plant with this name already exists.' });
       }
-      updates.name = name.toLowerCase() // Normalize name to lowercase
+      updates.name = name.toLowerCase();
     }
 
-    // Ensure quickInfo is handled as an array (like in createPlant)
+    // Handle 'quickInfo' - parsing if it's a string
     if (quickInfo) {
-      updates.quickInfo = Array.isArray(quickInfo)
-        ? quickInfo
-        : JSON.parse(quickInfo) // Parse if it's a string
+      updates.quickInfo = Array.isArray(quickInfo) ? quickInfo : JSON.parse(quickInfo);
     }
 
-    // Handle image updates
-    if (images) {
-      if (images.image1) updates.image1 = images.image1[0].path
-      if (images.image2) updates.image2 = images.image2[0].path
-      if (images.image3) updates.image3 = images.image3[0].path
-      if (images.image4) updates.image4 = images.image4[0].path
-      if (images.gardenImage) updates.gardenImage = images.gardenImage[0].path
+    console.log(typeof pests);
+    console.log(Array.isArray(pests)); // Check if it's an array or string
+    
+    // Handle array fields (e.g., pests, diseases, etc.)
+    if (pests) {
+      // If pests is a string that looks like an array, parse it
+      if (typeof pests === 'string') {
+        try {
+          updates.pests = JSON.parse(pests); // Parse the string as JSON if it's a stringified array
+        } catch (error) {
+          return res.status(400).json({ error: 'Invalid format for pests field.' });
+        }
+      } else if (Array.isArray(pests)) {
+        updates.pests = pests; // If it's already an array, use it directly
+      } else {
+        return res.status(400).json({ error: 'Pests field must be an array or a valid stringified array.' });
+      }
+    }
+    if (diseases) updates.diseases = Array.isArray(diseases) ? diseases : JSON.parse(diseases);
+    if (beneficialCritters) updates.beneficialCritters = Array.isArray(beneficialCritters) ? beneficialCritters : JSON.parse(beneficialCritters);
+    if (nutrients) updates.nutrients = Array.isArray(nutrients) ? nutrients : JSON.parse(nutrients);
+    if (vitamins) updates.vitamins = Array.isArray(vitamins) ? vitamins : JSON.parse(vitamins);
+
+    // Handle combative relationships (assuming it's an array)
+    if (combativeRelationships) {
+      updates.combativeRelationships = Array.isArray(combativeRelationships)
+        ? combativeRelationships
+        : JSON.parse(combativeRelationships);
     }
 
+    // Handle companion relationships (assuming it's an array)
+    if (companionRelationships) {
+      updates.companionRelationships = Array.isArray(companionRelationships)
+        ? companionRelationships
+        : JSON.parse(companionRelationships);
+    }
+
+    // Update the plant
     const updatedPlant = await Plant.findByIdAndUpdate(req.params.id, updates, {
       new: true,
-    })
+    });
+
+    // If plant is not found
     if (!updatedPlant) {
-      return res.status(404).json({ error: 'Plant not found' })
+      return res.status(404).json({ error: 'Plant not found' });
     }
 
-    res
-      .status(200)
-      .json({ message: 'Plant updated successfully', data: updatedPlant })
+    res.status(200).json({ message: 'Plant updated successfully', data: updatedPlant });
   } catch (error) {
-    res.status(400).json({ error: error.message })
+    console.error(error);
+    res.status(400).json({ error: error.message });
   }
-}
+};
+
+
 
 
 // Delete Plant
@@ -276,3 +339,37 @@ exports.getPlantsGroupedByCategory = async (req, res) => {
     })
   }
 }
+
+
+
+exports.updateRelationships = async (req, res) => {
+  const { id } = req.params; // Plant ID
+  const { relationships, relationshipType } = req.body; // `relationships` contains the updated data, and `relationshipType` decides which relationship to update.
+
+  if (!['combativeRelationships', 'companionRelationships'].includes(relationshipType)) {
+    return res.status(400).json({ error: 'Invalid relationship type provided.' });
+  }
+
+  try {
+    const updateField = { [relationshipType]: relationships };
+
+    const updatedPlant = await Plant.findByIdAndUpdate(
+      id,
+      updateField,
+      { new: true }
+    ).populate(`${relationshipType}.plant ${relationshipType}.effects.effect`);
+
+    if (!updatedPlant) {
+      return res.status(404).json({ error: 'Plant not found' });
+    }
+
+    res.status(200).json({ 
+      message: `${relationshipType.replace(/([A-Z])/g, ' $1').toLowerCase()} updated successfully`, 
+      data: updatedPlant 
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: error.message });
+  }
+};
+

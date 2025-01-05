@@ -42,8 +42,6 @@ nutritionSchema.pre('findOneAndUpdate', function (next) {
   }
   next();
 });
-
-
-const Nutrition = mongoose.model('Vitamin', nutritionSchema)
+const Nutrition = mongoose.model('Nutrient', nutritionSchema)
 
 module.exports = Nutrition
