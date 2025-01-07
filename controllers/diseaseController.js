@@ -91,6 +91,23 @@ const getAllDiseases = async (req, res) => {
 }
 
 
+const getAllAllDiseases = async (req, res) => {
+  try {
+    // Fetch all pests with only `name`, `slug`, and `image` fields
+    const diseases = await Disease.find({}, 'name slug image');
+
+    // Return the diseases
+    res.status(200).json({
+      success: true,
+      diseases,
+    });
+  } catch (error) {
+    console.error('Error fetching diseases:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+
 // Get disease by ID
 const getDiseaseById = async (req, res) => {
   try {
@@ -252,4 +269,5 @@ module.exports = {
   deleteDisease,
   getDiseaseByPlantSlug,
   getDiseaseByIdAdmin,
+  getAllAllDiseases
 }

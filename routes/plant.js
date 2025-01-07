@@ -18,6 +18,9 @@ router.post(
 router.get('/grouped-by-category', plantController.getPlantsGroupedByCategory)
 router.get('/', plantController.getPlants)
 router.get('/all', plantController.getAllPlants)
+router.get('/dataall', plantController.getAllAllPlantsData)
+router.put('/plants/:slug/relationships', plantController.updateRelationshipsBySlug);
+router.get('/slug/:slug', plantController.getPlantBySlug)
 router.get('/category/:category', plantController.getPlantsByCategoryName)
 router.get('/:id', plantController.getPlantById)
 router.put(

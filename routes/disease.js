@@ -8,6 +8,7 @@ const {
   deleteDisease,
   getDiseaseByPlantSlug,
   getDiseaseByIdAdmin,
+  getAllAllDiseases
 } = require('../controllers/diseaseController')
 
 const upload = require('../middleware/multer')
@@ -17,6 +18,7 @@ const { protect, authorize } = require('../middleware/auth')
 // CRUD Routes
 router.post('/',upload.single('image'),protect, createDisease)
 router.get('/', getAllDiseases)
+router.get('/all', protect, getAllAllDiseases)
 router.get('/:id', getDiseaseById)
 router.get('/admin/:id', getDiseaseByIdAdmin)
 router.put('/:id',upload.single('image'),protect, updateDisease)

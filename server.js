@@ -59,7 +59,9 @@ const allowedOrigins = [
   'garden-planter3.vercel.app',
   'www.garden-planter3.vercel.app',
   'https://mygardenplanter.vercel.app',
-  'www.mygardenplanter.vercel.app/'
+  'www.mygardenplanter.vercel.app/',
+  'https://my-garden-planter.vercel.app/',
+  'www.my-garden-planter.vercel.app'
 ]
 
 const corsOptions = {

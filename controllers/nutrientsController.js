@@ -82,6 +82,22 @@ const getAllNutritions = async (req, res) => {
   }
 }
 
+const getAllAllNutrition = async (req, res) => {
+  try {
+    // Fetch all pests with only `name`, `slug`, and `image` fields
+    const nutrition = await Nutrition.find({}, 'name slug image');
+
+    // Return the nutrition
+    res.status(200).json({
+      success: true,
+      nutrition,
+    });
+  } catch (error) {
+    console.error('Error fetching nutrition:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 
 // Get nutrition by ID
 const getNutritionById = async (req, res) => {
@@ -199,4 +215,5 @@ module.exports = {
   updateNutrition,
   deleteNutrition,
   getNutritionByIdAdmin,
+  getAllAllNutrition
 }

@@ -98,7 +98,7 @@ const plantSchema = new mongoose.Schema({
   pests: [
     {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Pest',
+      ref: 'Pests',
     },
   ],
   diseases: [

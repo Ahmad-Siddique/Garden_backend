@@ -105,14 +105,28 @@ exports.getAllPaginationEffects = async (req, res) => {
 
 // Get all Effects
 exports.getAllEffects = async (req, res) => {
+  const { type } = req.params; // Extract the type from the route parameters
+
   try {
-    const effects = await Effect.find();
-    res.status(200).json({ success: true, effects });
+    // Build the query based on the type
+    const query = type ? { type } : {};
+
+    // Fetch effects filtered by type
+    const effects = await Effect.find(query);
+
+    res.status(200).json({
+      success: true,
+      effects,
+    });
   } catch (error) {
     console.error('Error fetching effects:', error);
-    res.status(500).json({ success: false, message: 'Server error.' });
+    res.status(500).json({
+      success: false,
+      message: 'Server error.',
+    });
   }
 };
+
 
 // Get a single Effect by ID
 exports.getEffectById = async (req, res) => {

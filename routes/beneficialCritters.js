@@ -8,6 +8,7 @@ const {
   deleteBeneficialCritter,
   getCritterByPlantSlug,
   getBeneficialCritterByIdAdmin,
+  getAllAllCritters
 } = require('../controllers/beneficialCritterController')
 
 const upload = require('../middleware/multer')
@@ -17,6 +18,7 @@ const { protect, authorize } = require('../middleware/auth')
 // CRUD Routes
 router.post('/', upload.single('image'), protect, createBeneficialCritter)
 router.get('/', getAllBeneficialCritters)
+router.get('/all', protect, getAllAllCritters)
 router.get('/:id', getBeneficialCritterById)
 router.get('/admin/:id', getBeneficialCritterByIdAdmin)
 router.put('/:id', upload.single('image'), protect, updateBeneficialCritter)

@@ -1,5 +1,9 @@
+const BeneficialCritter = require('../models/beneficialCritters');
+const Disease = require('../models/disease');
+const Nutrition = require('../models/nutrient');
+const Pests = require('../models/pest');
 const Plant = require('../models/Plant')
-
+const Vitamins = require('../models/vitamin')
 exports.createPlant = async (req, res) => {
   try {
     const {
@@ -19,8 +23,7 @@ exports.createPlant = async (req, res) => {
       beneficialCritters,
       nutrients,
       vitamins,
-      combativeRelationships,
-      companionRelationships,
+     
     } = req.body;
 
     const images = req.files;
@@ -58,8 +61,7 @@ exports.createPlant = async (req, res) => {
       beneficialCritters,
       nutrients,
       vitamins,
-      combativeRelationships,
-      companionRelationships,
+      
       createdBy: req.user.id,
     });
 
@@ -70,6 +72,39 @@ exports.createPlant = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
+
+
+exports.updateRelationshipsBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params; // Extract slug from URL
+    const { companionRelationships, combativeRelationships } = req.body;
+
+    // Check if the plant exists using the slug
+    const plant = await Plant.findOne({ slug });
+    if (!plant) {
+      return res.status(404).json({ error: 'Plant not found' });
+    }
+
+    // Update relationships
+    if (companionRelationships) {
+      plant.companionRelationships = companionRelationships;
+    }
+    if (combativeRelationships) {
+      plant.combativeRelationships = combativeRelationships;
+    }
+
+    // Save the updated plant
+    const updatedPlant = await plant.save();
+    res.status(200).json({
+      message: 'Relationships updated successfully',
+      data: updatedPlant,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: error.message });
+  }
+};
+
 
 
 
@@ -121,9 +156,9 @@ exports.getPlants = async (req, res) => {
       sortOptions.category = 1; // Sort by category in ascending order
     }
 
-    // Fetch plants with the built query, apply sorting and pagination
+    // Fetch plants with the built query, apply sorting and pagination, select specific fields
     const plants = await Plant.find(searchQuery)
-      .populate('quickInfo.infoId') // Populate related fields
+      .select('name image1 slug') // Select only name, image1, and slug
       .sort(sortOptions)
       .skip(skip)
       .limit(parseInt(limit));
@@ -146,6 +181,7 @@ exports.getPlants = async (req, res) => {
 };
 
 
+
 exports.getAllPlants = async (req, res) => {
   try {
     const plants = await Plant.find().populate('category quickInfo.infoId')
@@ -155,6 +191,30 @@ exports.getAllPlants = async (req, res) => {
   }
 }
 
+
+exports.getAllAllPlantsData = async (req, res) => {
+  try {
+    // Fetch all pests with only `name`, `slug`, and `image` fields
+    const pests = await Pests.find({}, 'name slug image');
+    const diseases = await Disease.find({}, 'name slug image');
+    const beneficialCritters = await BeneficialCritter.find({}, 'name slug imageUrl');
+    const nutrients= await Nutrition.find({}, 'name slug image');
+    const vitamins = await Vitamins.find({}, 'name slug image');
+
+    // Return the pests
+    res.status(200).json({
+      success: true,
+      pests,
+      diseases,
+      beneficialCritters,
+      nutrients,
+      vitamins
+    });
+  } catch (error) {
+    console.error('Error fetching pests:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
 
 // Get plants by category with pagination and search
 exports.getPlantsByCategoryName = async (req, res) => {
@@ -370,6 +430,37 @@ exports.updateRelationships = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(400).json({ error: error.message });
+  }
+};
+
+
+
+// Get Plant by Slug
+exports.getPlantBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params; // Get the slug from the URL parameters
+
+    // Find the plant by slug and populate the relevant fields
+    const plant = await Plant.findOne({ slug: slug.toLowerCase() })
+      .populate('pests', 'name slug image') // Only select 'name', 'slug', and 'image' for pests
+      .populate('diseases', 'name slug image') // Only select 'name', 'slug', and 'image' for diseases
+      .populate('beneficialCritters', 'name slug imageUrl') // Only select 'name', 'slug', and 'image' for beneficialCritters
+      .populate('nutrients', 'name slug image') // Only select 'name', 'slug', and 'image' for nutrients
+      .populate('vitamins', 'name slug image') // Only select 'name', 'slug', and 'image' for vitamins
+      .populate('combativeRelationships.plant', 'name slug image') // Only select 'name', 'slug', and 'image' for plants in combativeRelationships
+      .populate('companionRelationships.plant', 'name slug image') // Only select 'name', 'slug', and 'image' for plants in companionRelationships
+      .populate('combativeRelationships.effects.effect', 'name slug image') // Only select 'name', 'slug', and 'image' for effects in combativeRelationships
+      .populate('companionRelationships.effects.effect', 'name slug image') // Only select 'name', 'slug', and 'image' for effects in companionRelationships
+      .populate('quickInfo.infoId'); // Populate the quickInfo infoId field
+
+    if (!plant) {
+      return res.status(404).json({ error: 'Plant not found' });
+    }
+
+    res.status(200).json({ message: 'Plant found successfully', data: plant });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 

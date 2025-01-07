@@ -88,6 +88,23 @@ const getAllBeneficialCritters = async (req, res) => {
 }
 
 
+const getAllAllCritters = async (req, res) => {
+  try {
+    // Fetch all pests with only `name`, `slug`, and `image` fields
+    const beneficialCritters = await BeneficialCritter.find({}, 'name slug image');
+
+    // Return the beneficialCritters
+    res.status(200).json({
+      success: true,
+      beneficialCritters,
+    });
+  } catch (error) {
+    console.error('Error fetching beneficialCritters:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+
 // Get beneficial critter by ID
 const getBeneficialCritterById = async (req, res) => {
   try {
@@ -256,4 +273,5 @@ module.exports = {
   deleteBeneficialCritter,
   getCritterByPlantSlug,
   getBeneficialCritterByIdAdmin,
+  getAllAllCritters
 }

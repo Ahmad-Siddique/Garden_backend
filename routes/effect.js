@@ -9,7 +9,7 @@ router.post('/',upload.single('image'),protect, effectController.createEffect);
 
 // Get all Effects
 router.get('/', effectController.getAllPaginationEffects);
-router.get('/all', effectController.getAllEffects);
+router.get('/all/:type?', effectController.getAllEffects);
 
 // Get a single Effect by ID
 router.get('/:id', effectController.getEffectById);

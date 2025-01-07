@@ -7,12 +7,14 @@ const {
   updateNutrition,
   deleteNutrition,
   getNutritionByIdAdmin,
+  getAllAllNutrition
 } = require('../controllers/nutrientsController')
 const upload = require('../middleware/multer')
 const { protect, authorize } = require('../middleware/auth')
 // CRUD routes
 router.post('/',upload.single('image'),protect, createNutrition)
 router.get('/', getAllNutritions)
+router.get('/all', protect, getAllAllNutrition)
 router.get('/:id', getNutritionById)
 router.get('/admin/:id', protect, getNutritionByIdAdmin)
 router.put('/:id', upload.single('image'), protect, updateNutrition)
