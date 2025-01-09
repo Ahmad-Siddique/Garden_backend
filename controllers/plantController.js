@@ -403,35 +403,79 @@ exports.getPlantsGroupedByCategory = async (req, res) => {
 
 
 exports.updateRelationships = async (req, res) => {
-  const { id } = req.params; // Plant ID
-  const { relationships, relationshipType } = req.body; // `relationships` contains the updated data, and `relationshipType` decides which relationship to update.
-
-  if (!['combativeRelationships', 'companionRelationships'].includes(relationshipType)) {
-    return res.status(400).json({ error: 'Invalid relationship type provided.' });
-  }
+  const { slug } = req.params; // Plant slug
+  const {
+    combativeRelationships = [],
+    companionRelationships = [],
+  } = req.body; // Extract relationships from the request body
 
   try {
-    const updateField = { [relationshipType]: relationships };
+    // Input validation function
+    const validateRelationships = (relationships) => {
+      for (const relationship of relationships) {
+        if (!relationship.plant) {
+          throw new Error('Each relationship must have a valid "plant" ID.');
+        }
+        if (!Array.isArray(relationship.effects)) {
+          throw new Error('Each relationship must have an "effects" array.');
+        }
+        for (const effect of relationship.effects) {
+          if (!effect.effect) {
+            throw new Error('Each effect must have a valid "effect" ID.');
+          }
+          if (!effect.description) {
+            throw new Error('Each effect must have a "description".');
+          }
+          if (effect.description.length > 1000) {
+            throw new Error('Effect description must not exceed 1000 characters.');
+          }
+          if (!Array.isArray(effect.causedBy)) {
+            throw new Error('Each effect must have a "causedBy" array.');
+          }
+          if (!Array.isArray(effect.affectedPlants)) {
+            throw new Error('Each effect must have an "affectedPlants" array.');
+          }
+        }
+      }
+    };
 
-    const updatedPlant = await Plant.findByIdAndUpdate(
-      id,
-      updateField,
-      { new: true }
-    ).populate(`${relationshipType}.plant ${relationshipType}.effects.effect`);
+    // Validate input data
+    validateRelationships(combativeRelationships);
+    validateRelationships(companionRelationships);
 
-    if (!updatedPlant) {
+    // Find the plant by slug
+    const plant = await Plant.findOne({ slug });
+    if (!plant) {
       return res.status(404).json({ error: 'Plant not found' });
     }
 
-    res.status(200).json({ 
-      message: `${relationshipType.replace(/([A-Z])/g, ' $1').toLowerCase()} updated successfully`, 
-      data: updatedPlant 
+    // Update relationships
+    plant.combativeRelationships = combativeRelationships;
+    plant.companionRelationships = companionRelationships;
+
+    // Save the updated plant
+    const updatedPlant = await plant.save();
+
+    // Populate the updated relationships
+    await updatedPlant.populate([
+      {
+        path: 'combativeRelationships.plant companionRelationships.plant',
+      },
+      {
+        path: 'combativeRelationships.effects.effect companionRelationships.effects.effect',
+      },
+    ]);
+
+    res.status(200).json({
+      message: 'Relationships updated successfully',
+      data: updatedPlant,
     });
   } catch (error) {
     console.error(error);
     res.status(400).json({ error: error.message });
   }
 };
+
 
 
 
