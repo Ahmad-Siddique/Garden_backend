@@ -12,7 +12,7 @@ const validateFeatureRequest = (body) => {
   if (!['Feature', 'Plant', 'Variety', 'Bug', 'Other'].includes(body.requestType)) {
     errors.push('Request type must be one of Feature, Plant, Variety, Bug, or Other.');
   }
-  if (body.status && !['In Progress', 'In Review', 'Planned'].includes(body.status)) {
+  if (body.status && !['New','In Progress', 'In Review', 'Planned'].includes(body.status)) {
     errors.push('Status must be one of In Progress, In Review, or Planned.');
   }
   return errors;
@@ -26,13 +26,21 @@ exports.createFeatureRequest = async (req, res) => {
   }
 
   try {
-    const featureRequest = new FeatureRequest(req.body);
+    // Ensure status is always set to 'New'
+    const featureRequestData = {
+      ...req.body,
+      userId:req.user.id,
+      status: 'New', // Override any provided status
+    };
+
+    const featureRequest = new FeatureRequest(featureRequestData);
     const savedFeatureRequest = await featureRequest.save();
     res.status(201).json(savedFeatureRequest);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
+
 
 // Get all feature requests
 exports.getAllFeatureRequests = async (req, res) => {
@@ -91,26 +99,31 @@ exports.getFeatureRequestById = async (req, res) => {
 };
 
 // Update a feature request
-exports.updateFeatureRequest = async (req, res) => {
-  const validationErrors = validateFeatureRequest(req.body);
-  if (validationErrors.length > 0) {
-    return res.status(400).json({ errors: validationErrors });
+exports.updateFeatureRequestStatus = async (req, res) => {
+  const { status } = req.body;
+  const validStatuses = ['New', 'In Progress', 'In Review', 'Planned'];
+
+  if (!status || !validStatuses.includes(status)) {
+    return res.status(400).json({ error: 'Invalid status. Must be one of New, In Progress, In Review, or Planned.' });
   }
 
   try {
     const updatedFeatureRequest = await FeatureRequest.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      { status },
       { new: true, runValidators: true }
     );
+
     if (!updatedFeatureRequest) {
       return res.status(404).json({ message: 'Feature request not found.' });
     }
+
     res.status(200).json(updatedFeatureRequest);
   } catch (error) {
     res.status(500).json({ message: 'Invalid ID format or other server error.' });
   }
 };
+
 
 // Increment upvote for a feature request
 exports.upvoteFeatureRequest = async (req, res) => {

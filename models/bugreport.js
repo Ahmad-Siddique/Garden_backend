@@ -7,8 +7,13 @@ const BugReportSchema = new mongoose.Schema({
     trim: true,
     maxlength: 2000,
   },
-  image: {
-    type: String, // URL or path to the uploaded screenshot
+  images: {
+    type: [String], // Array of image URLs
+    default: [],
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
   },
   emailUpdates: {
     type: String,

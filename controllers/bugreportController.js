@@ -8,15 +8,16 @@ exports.createBugReport = async (req, res) => {
     return res.status(400).json({ success: false, message: 'Description is required.' });
   }
 
-  let imageUrl = ''
-  if (req.file) {
-    imageUrl = req.file.path // Cloudinary URL
+  let imageUrls = [];
+  if (req.files) {
+    imageUrls = req.files.map((file) => file.path); // Assuming Cloudinary or local storage
   }
 
   try {
     const newBugReport = new BugReport({
       description,
-      screenshot: imageUrl ? imageUrl : null, // Optional field
+      userId: req.user.id, // Assuming authentication middleware sets req.user
+      images: imageUrls, // Store multiple images
       emailUpdates: emailUpdates || null, // Optional field
       status: 'New',
     });

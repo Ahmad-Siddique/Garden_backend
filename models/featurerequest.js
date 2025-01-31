@@ -15,13 +15,14 @@ const featureRequestSchema = new mongoose.Schema({
     enum: ['Feature', 'Plant', 'Variety', 'Bug', 'Other'],
     required: true,
   },
-  name: {
-    type: String,
-    default: 'Anonymous',
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
   },
   status: {
     type: String,
-    enum: ['In Progress', 'In Review', 'Planned'],
+    enum: ['New','In Progress', 'In Review', 'Planned'],
     default: 'In Review',
   },
   upvote: {
