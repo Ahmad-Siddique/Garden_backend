@@ -46,39 +46,11 @@ app.use(cookieParser())
 app.use(hpp())
 app.use(mongoSanitize())
 
-const allowedOrigins = [
-  'http://localhost:3000',
-  'https://ooowap-frontend.vercel.app',
-  'ooowap-fronend.vercel.app',
-  'www.ooowap-frontend.vercel.app',
-  'https://garden-planter.vercel.app',
-  'www.garden-planter.vercel.app',
-  'https://garden-planter2.vercel.app',
-  'garden-planter2.vercel.app',
-  'https://garden-planter3.vercel.app',
-  'garden-planter3.vercel.app',
-  'www.garden-planter3.vercel.app',
-  'https://mygardenplanter.vercel.app',
-  'www.mygardenplanter.vercel.app/',
-  'https://my-garden-planter.vercel.app/',
-  'www.my-garden-planter.vercel.app'
-]
-
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps, curl requests)
-    if (!origin) return callback(null, true)
+  origin: '*', // Allow all origins
+};
 
-    // Check if the origin is in the allowedOrigins array
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true) // Allow request
-    } else {
-      callback(new Error('Not allowed by CORS')) // Block request
-    }
-  },
-}
-
-app.use(cors(corsOptions))
+app.use(cors(corsOptions));
 
 connectDB()
 
