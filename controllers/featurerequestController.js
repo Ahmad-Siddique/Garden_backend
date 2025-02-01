@@ -1,5 +1,6 @@
 const FeatureRequest = require('../models/featurerequest');
-
+const upvote = require('../models/upvote');
+const Comment = require('../models/featurerequestcomment');
 // Utility function for validating request body
 const validateFeatureRequest = (body) => {
   const errors = [];
@@ -86,15 +87,27 @@ exports.getAllFeatureRequests = async (req, res) => {
   
 
 // Get a specific feature request by ID
+
+
 exports.getFeatureRequestById = async (req, res) => {
   try {
     const featureRequest = await FeatureRequest.findById(req.params.id);
     if (!featureRequest) {
       return res.status(404).json({ message: 'Feature request not found.' });
     }
-    res.status(200).json(featureRequest);
+
+    // Count number of comments for this feature request
+    const commentCount = await Comment.countDocuments({ featureRequestId: req.params.id });
+
+    // Convert Mongoose document to a plain object
+    const featureRequestObject = featureRequest.toObject();
+
+    // Add comment count to the response object
+    featureRequestObject.comments = commentCount;
+
+    res.status(200).json(featureRequestObject);
   } catch (error) {
-    res.status(500).json({ message: 'Invalid ID format or other server error.' });
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -128,18 +141,31 @@ exports.updateFeatureRequestStatus = async (req, res) => {
 // Increment upvote for a feature request
 exports.upvoteFeatureRequest = async (req, res) => {
   try {
-    const featureRequest = await FeatureRequest.findById(req.params.id);
-    if (!featureRequest) {
-      return res.status(404).json({ message: 'Feature request not found.' });
+    
+    const { id: featureRequestId } = req.params;
+    const userId = req.user.id
+    if (!userId) {
+      return res.status(400).json({ message: 'User ID is required.' });
     }
-    featureRequest.upvote += 1;
-    await featureRequest.save();
-    res.status(200).json({ message: 'Upvoted successfully.', upvotes: featureRequest.upvote });
+
+    // Check if the user has already upvoted
+    const existingUpvote = await upvote.findOne({ featureRequestId, userId });
+    if (existingUpvote) {
+      return res.status(400).json({ message: 'User has already upvoted this feature request.' });
+    }
+
+    // Create a new upvote record
+    await upvote.create({ featureRequestId, userId });
+
+    // Increment the upvote count in FeatureRequest
+    await FeatureRequest.findByIdAndUpdate(featureRequestId, { $inc: { upvote: 1 } });
+
+    res.status(200).json({ message: 'Upvoted successfully.' });
   } catch (error) {
-    res.status(500).json({ message: 'Invalid ID format or other server error.' });
+    console.log(error)
+    res.status(500).json({ message: 'Server error or invalid ID format.' });
   }
 };
-
 // Delete a feature request
 exports.deleteFeatureRequest = async (req, res) => {
   try {
@@ -149,6 +175,7 @@ exports.deleteFeatureRequest = async (req, res) => {
     }
     res.status(200).json({ message: 'Feature request deleted successfully.' });
   } catch (error) {
+   
     res.status(500).json({ message: 'Invalid ID format or other server error.' });
   }
 };

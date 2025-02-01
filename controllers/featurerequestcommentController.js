@@ -2,8 +2,8 @@ const Comment = require('../models/featurerequestcomment');
 
 // Create a new comment
 exports.createComment = async (req, res) => {
-  const { name, comment, featureRequestId } = req.body;
-
+  const { comment, featureRequestId } = req.body;
+  const name = req.user.firstName
   if (!comment || !featureRequestId) {
     return res.status(400).json({ success: false, message: 'Comment and featureRequestId are required.' });
   }
