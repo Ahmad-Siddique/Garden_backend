@@ -43,48 +43,84 @@ exports.createFeatureRequest = async (req, res) => {
 };
 
 
-// Get all feature requests
-exports.getAllFeatureRequests = async (req, res) => {
-    const { search, page = 1, limit = 10 } = req.query; // Extract search, page, and limit from query params
-  
-    try {
-      // Build the search query
-      const searchQuery = search
-        ? {
-            $or: [
-              { title: { $regex: search, $options: 'i' } }, // Case insensitive search by title
-              { description: { $regex: search, $options: 'i' } }, // Case insensitive search by description
-              { requestType: { $regex: search, $options: 'i' } }, // Case insensitive search by request type
-            ],
-          }
-        : {}; // No search criteria if no search query is provided
-  
-      // Pagination logic
-      const skip = (page - 1) * limit; // Calculate how many records to skip
-  
-      // Fetch feature requests based on search criteria and apply pagination
-      const featureRequests = await FeatureRequest.find(searchQuery)
-        .skip(skip)
-        .limit(parseInt(limit))
-        .sort({ createdAt: -1 }); // Sort by creation date (most recent first)
-  
-      // Get the total number of feature requests that match the search query
-      const totalFeatureRequests = await FeatureRequest.countDocuments(searchQuery);
-  
-      // Return the feature requests along with pagination data
-      res.status(200).json({
-        success: true,
-        featureRequests,
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalFeatureRequests / limit),
-        totalFeatureRequests,
-      });
-    } catch (error) {
-      console.error('Error fetching feature requests:', error);
-      res.status(500).json({ success: false, message: 'Server error' });
+// Get a single feature request by ID
+exports.getFeatureRequestById = async (req, res) => {
+  try {
+    // Find the feature request by ID from the database
+    const featureRequest = await FeatureRequest.findById(req.params.id);
+    
+    // If no feature request is found, return a 404 response
+    if (!featureRequest) {
+      return res.status(404).json({ message: 'Feature request not found.' });
     }
-  };
-  
+
+    // Count the number of comments associated with this feature request
+    const commentCount = await Comment.countDocuments({ featureRequestId: req.params.id });
+
+    // Convert the Mongoose document to a plain JavaScript object
+    const featureRequestObject = featureRequest.toObject();
+
+    // Add the comment count to the response object
+    featureRequestObject.comments = commentCount;
+
+    // Send the feature request data along with the comment count
+    res.status(200).json(featureRequestObject);
+  } catch (error) {
+    // Handle any server errors and return a 500 response
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get all feature requests with search and pagination
+exports.getAllFeatureRequests = async (req, res) => {
+  // Extract search keyword, page number, and limit from query parameters
+  const { search, page = 1, limit = 10 } = req.query;
+
+  try {
+    // Build the search query if a search term is provided
+    const searchQuery = search
+      ? {
+          $or: [
+            { title: { $regex: search, $options: 'i' } }, // Case-insensitive title search
+            { description: { $regex: search, $options: 'i' } }, // Case-insensitive description search
+            { requestType: { $regex: search, $options: 'i' } }, // Case-insensitive request type search
+          ],
+        }
+      : {}; // Empty object if no search term is provided
+
+    // Calculate how many records to skip for pagination
+    const skip = (page - 1) * limit;
+
+    // Fetch feature requests matching the search criteria and apply pagination
+    const featureRequests = await FeatureRequest.find(searchQuery)
+      .skip(skip)
+      .limit(parseInt(limit))
+      .sort({ createdAt: -1 }); // Sort by newest first
+
+    // Get the total number of matching feature requests
+    const totalFeatureRequests = await FeatureRequest.countDocuments(searchQuery);
+
+    // Fetch comment counts for each feature request
+    const featureRequestsWithComments = await Promise.all(featureRequests.map(async (request) => {
+      const commentCount = await Comment.countDocuments({ featureRequestId: request._id });
+      return { ...request.toObject(), comments: commentCount };
+    }));
+
+    // Send the feature requests along with pagination metadata and comment counts
+    res.status(200).json({
+      success: true,
+      featureRequests: featureRequestsWithComments,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalFeatureRequests / limit),
+      totalFeatureRequests,
+    });
+  } catch (error) {
+    // Log and return a server error response
+    console.error('Error fetching feature requests:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
 
 // Get a specific feature request by ID
 
