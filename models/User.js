@@ -99,6 +99,37 @@ const UserSchema = new mongoose.Schema({
     default: false
   },
 
+
+
+  // New Fields
+  springFrostDate: {
+    type: Date,
+    default: null,
+  },
+  fallFrostDate: {
+    type: Date,
+    default: null,
+  },
+  useMetricUnits: {
+    type: Boolean,
+    default: false,
+  },
+  addressInfo: {
+    longitude: {
+      type: Number,
+      default: null,
+    },
+    latitude: {
+      type: Number,
+      default: null,
+    },
+    zipcode: {
+      type: String,
+      default: '',
+    },
+  },
+
+
   // Token for resetting the user's password
   resetPasswordToken: String,
   // Expiry date for the reset password token

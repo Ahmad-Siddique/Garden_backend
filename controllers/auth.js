@@ -737,6 +737,132 @@ exports.updateUserProfile = asyncHandler(async (req, res, next) => {
 
 
 
+
+
+exports.updateSpringFrostDate = asyncHandler(async (req, res, next) => {
+  const { springFrostDate } = req.body
+
+  if (!springFrostDate) {
+    return res.status(400).json({ success: false, message: "Spring frost date is required" })
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { springFrostDate },
+    { new: true, runValidators: true }
+  )
+
+  res.status(200).json({
+    success: true,
+    data: user.springFrostDate,
+    message: "Spring frost date updated successfully",
+  })
+})
+
+// @desc    Add/Update Fall Frost Date
+// @route   PUT /api/v1/auth/update-fall-frost
+// @access  Private
+exports.updateFallFrostDate = asyncHandler(async (req, res, next) => {
+  const { fallFrostDate } = req.body
+
+  if (!fallFrostDate) {
+    return res.status(400).json({ success: false, message: "Fall frost date is required" })
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { fallFrostDate },
+    { new: true, runValidators: true }
+  )
+
+  res.status(200).json({
+    success: true,
+    data: user.fallFrostDate,
+    message: "Fall frost date updated successfully",
+  })
+})
+
+// @desc    Add/Update Metric Unit Preference
+// @route   PUT /api/v1/auth/update-metric-unit
+// @access  Private
+exports.updateMetricUnit = asyncHandler(async (req, res, next) => {
+  const { useMetricUnits } = req.body
+
+  if (typeof useMetricUnits !== 'boolean') {
+    return res.status(400).json({ success: false, message: "Metric unit should be true or false" })
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
+    { useMetricUnits },
+    { new: true, runValidators: true }
+  )
+
+  res.status(200).json({
+    success: true,
+    data: user.useMetricUnits,
+    message: "Metric unit preference updated successfully",
+  })
+})
+
+// Function to calculate growing season information
+const calculateGrowingSeason = (springFrost, fallFrost) => {
+  const today = new Date()
+  let result = {}
+
+  if (springFrost && fallFrost) {
+    const sfd = new Date(springFrost)
+    const ffd = new Date(fallFrost)
+    const growingSeason = (ffd - sfd) / (1000 * 60 * 60 * 24)
+
+    result.growingSeasonLength = `${growingSeason} days long (~${Math.round(growingSeason / 7)} weeks)`
+  }
+
+  if (fallFrost) {
+    const ffd = new Date(fallFrost)
+    const daysUntilFall = Math.ceil((ffd - today) / (1000 * 60 * 60 * 24))
+    result.daysUntilFallFrost = `${daysUntilFall} growing days until your fall frost date`
+  }
+
+  if (springFrost) {
+    const sfd = new Date(springFrost)
+    const daysUntilSpring = Math.ceil((sfd - today) / (1000 * 60 * 60 * 24))
+    result.daysUntilSpringFrost = `${daysUntilSpring} days until your spring frost date`
+  }
+
+  return result
+}
+
+// @desc    Fetch Growing Season Info
+// @route   GET /api/v1/auth/growing-season
+// @access  Private
+exports.getGrowingSeasonInfo = asyncHandler(async (req, res, next) => {
+  const user = await User.findById(req.user.id)
+
+  if (!user) {
+    return res.status(404).json({ success: false, message: "User not found" })
+  }
+
+  const growingSeasonData = calculateGrowingSeason(user.springFrostDate, user.fallFrostDate)
+
+  res.status(200).json({
+    success: true,
+    data: {
+      springFrostDate: user.springFrostDate,
+      fallFrostDate: user.fallFrostDate,
+      useMetricUnits: user.useMetricUnits,
+      ...growingSeasonData,
+    },
+  })
+})
+
+
+
+
+
+
+
+
 exports.getUserProfile = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user.id).select('-password') // Exclude the password field
 

@@ -21,6 +21,10 @@ const {
   updateUserProfile,
   getUserProfile,
   getUserById,
+  updateSpringFrostDate,
+  updateFallFrostDate,
+  updateMetricUnit,
+  getGrowingSeasonInfo,
 
   // getUserMetrics,
   // getUserMetrics2,
@@ -45,6 +49,17 @@ router.post('/login', login)
 
 // Route to get user details (requires authentication)
 router.get('/getMe', protect, getMe)
+// Update Spring Frost Date
+router.put('/update-spring-frost', protect, updateSpringFrostDate)
+
+// Update Fall Frost Date
+router.put('/update-fall-frost', protect, updateFallFrostDate)
+
+// Update Metric Unit Preference
+router.put('/update-metric-unit', protect, updateMetricUnit)
+
+// Fetch Growing Season Info
+router.get('/growing-season', protect, getGrowingSeasonInfo)
 router.post('/onboarding', upload.single('image'),protect, onBoarding)
 // router.get('/getusermetrics', protect, getUserMetrics)
 // router.get('/getusermetrics2', protect, getUserMetrics2)
