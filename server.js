@@ -69,6 +69,7 @@ app.use('/api/v1/calenders', require('./routes/calender'))
 app.use('/api/v1/featurerequest', require('./routes/featurerequest'))
 app.use('/api/v1/featurerequestcomment', require('./routes/featurerequestcomment'))
 app.use('/api/v1/bugreport', require('./routes/bugreport'))
+app.use('/api/v1/blog', require('./routes/blog'))
 
 
 
